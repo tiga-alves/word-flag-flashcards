@@ -1,0 +1,32 @@
+﻿<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jogo de bandeiras</title>
+  <link rel="stylesheet" href="design-system.css">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="countries.js"></script>
+  <script defer src="game.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <main class="page">
+    <header class="intro">
+      <h1>Que países são estes?</h1>
+      <p>Digite o nome abaixo de cada bandeira.</p>
+    </header>
+    <section aria-labelledby="round-title">
+      <div class="sr-only"><h2 id="round-title">Rodada <span id="round-number">01</span></h2><p id="filled-count">0 de 5 respostas preenchidas</p></div>
+      <form id="game-form" autocomplete="off">
+        <div class="flags-grid" id="flags-grid"></div>
+        <div class="round-bottom">
+          <div id="round-status" class="round-status" role="status" aria-live="polite" aria-atomic="true"></div>
+          <div class="actions"><button type="submit" id="check-button" class="ds-button">Conferir respostas</button><button type="button" id="new-round" class="ds-button" hidden>Nova rodada</button></div>
+        </div>
+      </form>
+      <noscript><p class="notice">Ative o JavaScript no navegador para jogar.</p></noscript>
+    </section>
+  </main>
+</body>
+</html>
