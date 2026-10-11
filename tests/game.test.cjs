@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const countries = require('../countries.js');
+const modes = require('../modes.js');
 const { normalize, sample, grade } = require('../game.js');
 const base = path.resolve(__dirname, '..');
 const byCode = code => countries.find(country => country.code === code);
@@ -67,14 +68,16 @@ test('sorteio sem repetições e sem alterar o catálogo', () => {
 class Element {
   constructor(tag, document) {
     this.tag = tag; this.document = document; this.children = []; this.parent = null;
-    this.events = {}; this.attributes = {}; this.value = ''; this.disabled = false;
+    this.style = { setProperty() {} }; this.events = {}; this.attributes = {}; this.value = ''; this.disabled = false;
     this.hidden = false; this.className = ''; this.textContent = '';
-    this.classList = { add: value => { this.className += ` ${value}`; } };
+    this.classList = { toggle: (value, force) => { const classes = this.className.split(' ').filter(item => item && item !== value); if (force) classes.push(value); this.className = classes.join(' '); }, add: value => { this.className += ` ${value}`; } };
   }
+  remove() { if (this.parent) this.parent.children = this.parent.children.filter(child => child !== this); this.parent = null; }
+  setRangeText(value, start, end) { this.value = this.value.slice(0, start) + value + this.value.slice(end); this.selectionStart = this.selectionEnd = start + value.length; }
   append(...children) { for (const child of children) { child.parent = this; this.children.push(child); } }
   replaceChildren(...children) { for (const child of this.children) child.parent = null; this.children = []; this.append(...children); }
   addEventListener(type, callback) { this.events[type] = callback; }
-  setAttribute(key, value) { this.attributes[key] = value; }
+  setAttribute(key, value) { this.attributes[key] = value; if (key === 'class') this.className = value; }
   focus() { this.document.activeElement = this; }
   matches(selector) { return selector.startsWith('.') ? this.className.split(' ').includes(selector.slice(1)) : this.tag === selector; }
   querySelectorAll(selector) { return this.children.flatMap(child => [...(child.matches(selector) ? [child] : []), ...child.querySelectorAll(selector)]); }
@@ -84,79 +87,186 @@ class Element {
 }
 function appFixture() {
   const elements = {};
-  const document = { getElementById: id => elements[id], createElement: tag => new Element(tag, document) };
-  for (const [id, tag] of Object.entries({ 'flags-grid': 'div', 'game-form': 'form', 'check-button': 'button', 'new-round': 'button', 'round-status': 'div', 'filled-count': 'p', 'round-number': 'span' })) elements[id] = new Element(tag, document);
-  const deterministicGame = { normalize, grade, sample: list => sample(list, 5, () => 0.9999) };
-  vm.runInNewContext(fs.readFileSync(path.join(base, 'app.js'), 'utf8'), { document, FlagCountries: countries, FlagGame: deterministicGame });
+  const document = { events: {}, addEventListener(type, callback) { this.events[type] = callback; }, getElementById: id => elements[id], createElement: tag => new Element(tag, document), createElementNS: (namespace, tag) => new Element(tag, document) };
+  for (const [id, tag] of Object.entries({ 'game-modes': 'div', 'game-title': 'h1', 'answer-hint': 'p', 'flags-grid': 'div', 'game-form': 'form', 'country-input': 'input', 'gauge-count': 'span', 'gauge-total': 'span', 'new-round': 'button', 'round-status': 'div', 'filled-count': 'p', 'progress-gauge': 'div', 'progress-segments': 'svg' })) elements[id] = new Element(tag, document);
+  const deterministicGame = { normalize, grade, sample: (list, count = 5) => sample(list, count, () => 0.9999) };
+  vm.runInNewContext(fs.readFileSync(path.join(base, 'app.js'), 'utf8'), { document, window: {}, FlagModes: modes, FlagCountries: countries, FlagGame: deterministicGame });
   return { elements, document };
 }
 
-test('app: cinco campos sem nomes revelados, conferência única e nova rodada', () => {
+test('app: digitação livre, edição e nomes corretos em qualquer ordem', () => {
   const { elements: el, document } = appFixture();
-  const grid = el['flags-grid'];
-  const inputs = grid.querySelectorAll('input');
-  assert.equal(inputs.length, 5);
-  assert.ok(inputs.every(input => input.type === 'text' && !input.disabled));
-  assert.equal(document.activeElement, inputs[0]);
-  let enterPrevented = false;
-  inputs[0].events.keydown({ key: 'Enter', preventDefault() { enterPrevented = true; } });
-  assert.ok(enterPrevented);
-  assert.equal(document.activeElement, inputs[1]);
-  assert.equal(el['round-status'].children.length, 0);
-  assert.equal(el['new-round'].hidden, true);
-  grid.querySelectorAll('img').forEach((image, i) => {
-    assert.equal(image.alt, `Bandeira ${i + 1} da rodada`);
-    assert.equal(image.src, countries[i].flag);
-    assert.equal(inputs[i].name, `answer-${i}`);
+  const input = el['country-input'];
+  const cards = el['flags-grid'].children;
+  assert.equal(cards.length, 5);
+  assert.equal(document.activeElement, input);
+  input.value = 'a'; input.events.input({});
+  assert.equal(input.value, 'a');
+  input.value = ''; input.events.input({ inputType: 'deleteContentBackward' });
+  assert.equal(input.value, '');
+  input.value = 'pais errado'; input.events.input({});
+  assert.equal(cards.filter(card => card.matches('.correct')).length, 0);
+  input.value = ''; input.events.input({});
+  [4, 2, 0, 3, 1].forEach((index, step) => {
+    input.value = normalize(countries[index].name).replace(/[^\p{L}]/gu, '');
+    input.events.input({});
+    assert.ok(cards[index].matches('.correct'));
+    assert.equal(cards[index].querySelector('.feedback').textContent, countries[index].name);
+    assert.equal(el['round-status'].textContent, '');
+    assert.equal(input.value, '');
+    assert.equal(el['filled-count'].textContent, `${step + 1} de 5 países completos`);
   });
-  inputs.forEach((input, i) => { input.value = countries[i].name; });
-  el['game-form'].events.input();
-  assert.equal(el['filled-count'].textContent, '5 de 5 respostas preenchidas');
+  assert.equal(input.disabled, true);
+  assert.equal(el['new-round'].hidden, false);
+  assert.equal(document.activeElement, el['new-round']);
+  el['new-round'].events.click();
+  assert.equal(input.disabled, false);
+  assert.equal(el['progress-gauge'].attributes['aria-valuenow'], '0');
+  assert.equal(el['new-round'].hidden, true);
+});
+
+test('progresso: cinco arcos horários, contador sobe a cada acerto e reinício', () => {
+  const { elements: el } = appFixture();
+  const ring = el['progress-segments'];
+  const gauge = el['progress-gauge'];
+  const input = el['country-input'];
+  assert.equal(ring.children.length, 5);
+  assert.equal(ring.querySelectorAll('.complete').length, 0);
+  assert.equal(gauge.attributes['aria-valuemax'], '5');
+  assert.equal(el['gauge-count'].children[0].textContent, '0');
+  assert.equal(el['gauge-total'].textContent, '/5');
+  const starts = ring.children.map(segment => {
+    assert.equal(segment.children.length, 2);
+    assert.equal(segment.children[0].attributes.d, segment.children[1].attributes.d);
+    const match = segment.children[0].attributes.d.match(/^M ([\d.e+-]+) ([\d.e+-]+) A 92 92 0 0 1 /);
+    assert.ok(match, 'Each stripe is a real circular arc');
+    return (Math.atan2(Number(match[2]) - 120, Number(match[1]) - 120) * 180 / Math.PI + 360) % 360;
+  });
+  starts.forEach((angle, index) => assert.ok(Math.abs((starts[(index + 1) % 5] - angle + 360) % 360 - 72) < 0.001));
+  [4, 1, 3, 0, 2].forEach((index, step) => {
+    input.value = countries[index].name; input.events.input({});
+    ring.children.forEach((segment, position) => assert.equal(segment.matches('.complete'), position <= step));
+    assert.equal(ring.querySelectorAll('.complete').length, step + 1);
+    assert.equal(gauge.attributes['aria-valuenow'], String(step + 1));
+    assert.equal(el['gauge-count'].querySelector('.counter-digit--leaving').textContent, String(step));
+    assert.equal(el['gauge-count'].querySelector('.counter-digit--entering').textContent, String(step + 1));
+    input.value = countries[index].name; input.events.input({});
+    assert.equal(ring.querySelectorAll('.complete').length, step + 1);
+  });
+  el['new-round'].events.click();
+  assert.equal(ring.children.length, 5);
+  assert.equal(ring.querySelectorAll('.complete').length, 0);
+  assert.equal(gauge.attributes['aria-valuenow'], '0');
+  assert.equal(el['gauge-count'].children.length, 1);
+  assert.equal(el['gauge-count'].children[0].textContent, '0');
+  const html = fs.readFileSync(path.join(base, 'index.html'), 'utf8');
+  const panel = html.match(/<section class="panel progress-panel"[\s\S]*?<\/section>/)[0];
+  assert.doesNotMatch(panel, /solved-total|gauge-caption|round-number|remaining-total|class="metric"/);
+  assert.match(panel, /class="sr-only" aria-live="polite"/);
+  assert.match(html, /<h1 id="game-title">5 bandeiras aleatórias<\/h1>/);
+  assert.doesNotMatch(html, /letter-pool|EXPLORAR \/ BANDEIRAS/);
+});
+
+test('app: envio não revela respostas e falha de imagem permite nova rodada', () => {
+  const { elements: el } = appFixture();
   let prevented = false;
   el['game-form'].events.submit({ preventDefault() { prevented = true; } });
   assert.ok(prevented);
-  assert.ok(inputs.every(input => input.disabled));
-  assert.equal(el['round-status'].children[0].textContent, 'Você acertou 5 de 5!');
-  assert.equal(el['check-button'].disabled, true);
-  assert.equal(el['check-button'].hidden, true);
-  assert.equal(el['new-round'].hidden, false);
-  assert.equal(document.activeElement, el['new-round']);
-  inputs[0].value = 'errado';
-  el['game-form'].events.submit({ preventDefault() {} });
-  assert.equal(el['round-status'].children[0].textContent, 'Você acertou 5 de 5!');
-  grid.querySelectorAll('.feedback').forEach((feedback, i) => assert.equal(feedback.children[1].textContent, countries[i].name));
-  el['new-round'].events.click();
-  assert.equal(el['round-number'].textContent, '02');
-  assert.equal(el['filled-count'].textContent, '0 de 5 respostas preenchidas');
-  assert.equal(el['check-button'].disabled, false);
-  assert.equal(el['check-button'].hidden, false);
-  assert.equal(el['new-round'].hidden, true);
-  assert.ok(grid.querySelectorAll('input').every(input => !input.disabled && input.value === ''));
-  assert.ok(grid.querySelectorAll('.feedback').every(feedback => feedback.children.length === 0));
-  assert.equal(document.activeElement, grid.querySelector('input'));
-});
-
-test('app: vazios mostram resposta correta, falha de imagem impede conferência', () => {
-  const { elements: el } = appFixture();
-  el['game-form'].events.submit({ preventDefault() {} });
-  assert.equal(el['round-status'].children[0].textContent, 'Você acertou 0 de 5!');
-  assert.ok(el['flags-grid'].querySelectorAll('.feedback').every(feedback => feedback.children[0].textContent === '× Sem resposta'));
-  el['new-round'].events.click();
+  assert.ok(el['flags-grid'].querySelectorAll('.feedback').every(feedback => feedback.textContent === '…'));
   el['flags-grid'].querySelector('img').events.error();
-  assert.equal(el['check-button'].disabled, true);
   assert.equal(el['new-round'].hidden, false);
-  el['game-form'].events.submit({ preventDefault() {} });
-  assert.equal(el['round-status'].children[0].textContent, 'Não foi possível carregar uma bandeira.');
+  assert.match(el['round-status'].textContent, /Não foi possível carregar/);
+  el['new-round'].events.click();
+  assert.equal(el['round-status'].textContent, '');
 });
-
 test('página usa recursos locais e scripts clássicos compatíveis com file://', () => {
   const html = fs.readFileSync(path.join(base, 'index.html'), 'utf8');
   assert.match(html, /lang="pt-BR"/);
   assert.doesNotMatch(html, /(?:src|href)="(?:https?:|\/\/)|type="module"/);
   for (const match of html.matchAll(/(?:src|href)="([^"]+)"/g)) assert.ok(fs.existsSync(path.join(base, match[1])));
-  for (const file of ['app.js', 'game.js', 'countries.js']) {
+  for (const file of ['app.js', 'audio.js', 'game.js', 'countries.js']) {
     const source = fs.readFileSync(path.join(base, file), 'utf8');
     assert.doesNotMatch(source, /\bfetch\(|XMLHttpRequest|\bimport\s/);
     new vm.Script(source);
   }
+});
+
+
+
+test('áudio: inicia na digitação, gera notas e respeita silêncio', () => {
+  let contexts = 0, notes = 0;
+  const param = { setValueAtTime() {}, exponentialRampToValueAtTime() {}, linearRampToValueAtTime() {} };
+  class AudioContext {
+    constructor() { contexts++; this.currentTime = 1; this.state = 'running'; }
+    createOscillator() { return { frequency: param, connect() {}, start() { notes++; }, stop() {}, disconnect() {} }; }
+    createGain() { return { gain: param, connect() {}, disconnect() {} }; }
+  }
+  const window = { AudioContext };
+  const document = { readyState: 'complete', getElementById() { return null; } };
+  vm.runInNewContext(fs.readFileSync(path.join(base, 'audio.js'), 'utf8'), { window, document });
+  assert.equal(contexts, 0);
+  window.FlagAudio.type();
+  assert.equal(contexts, 1);
+  assert.equal(notes, 2);
+  window.FlagAudio.toggle();
+  window.FlagAudio.success();
+  assert.equal(notes, 2);
+  window.FlagAudio.toggle();
+  window.FlagAudio.success();
+  assert.equal(notes, 5);
+});
+
+
+test('modos: continentes cobrem os 195 países exatamente uma vez', () => {
+  const codes = modes.flatMap(mode => mode.codes || []);
+  assert.equal(codes.length, 195);
+  assert.equal(new Set(codes).size, 195);
+  assert.deepEqual([...codes].sort(), countries.map(country => country.code).sort());
+  assert.deepEqual(modes.map(mode => mode.count), [5, 54, 48, 44, 23, 12, 14, 195]);
+});
+
+test('menu: cada continente mostra todos os seus países e reinicia o progresso', () => {
+  const { elements: el } = appFixture();
+  const buttons = el['game-modes'].children;
+  assert.equal(buttons.length, 8);
+  modes.forEach((mode, index) => {
+    buttons[index].events.click();
+    assert.equal(el['flags-grid'].children.length, mode.count);
+    assert.equal(el['game-title'].textContent, mode.name);
+    assert.equal(buttons[index].attributes['aria-pressed'], 'true');
+    assert.equal(el['progress-gauge'].attributes['aria-valuenow'], '0');
+    assert.equal(el['progress-segments'].children.length, mode.count);
+    assert.equal(el['gauge-total'].textContent, `/${mode.count}`);
+    const images = el['flags-grid'].querySelectorAll('img');
+    if (mode.codes) assert.deepEqual(images.map(img => img.src).sort(), mode.codes.map(code => `assets/flags/${code}.svg`).sort());
+    const first = countries.find(country => country.flag === images[0].src);
+    el['country-input'].value = first.name;
+    el['country-input'].events.input({});
+    el['game-form'].events.submit({ preventDefault() {} });
+    assert.equal(el['progress-gauge'].attributes['aria-valuenow'], '1');
+  });
+});
+
+test('mundo: nomes com prefixos continuam digitáveis e todos os 195 podem ser concluídos', () => {
+  const { elements: el } = appFixture();
+  el['game-modes'].children[7].events.click();
+  const input = el['country-input'];
+  input.value = 'Guiné'; input.events.input({});
+  assert.equal(el['progress-gauge'].attributes['aria-valuenow'], '0');
+  assert.equal(el['answer-hint'].hidden, false);
+  input.value = 'Guiné-Bissau'; input.events.input({});
+  assert.equal(el['progress-gauge'].attributes['aria-valuenow'], '1');
+  assert.equal(el['answer-hint'].hidden, true);
+  for (const country of countries.filter(country => country.code !== 'gw')) {
+    input.value = country.name; input.events.input({});
+    if (input.value) el['game-form'].events.submit({ preventDefault() {} });
+  }
+  assert.equal(el['progress-gauge'].attributes['aria-valuenow'], '195');
+  assert.equal(el['progress-segments'].querySelectorAll('.complete').length, 195);
+  assert.equal(input.disabled, true);
+  assert.equal(el['new-round'].hidden, false);
+  el['game-modes'].children[0].events.click();
+  assert.equal(input.disabled, false);
+  assert.equal(el['flags-grid'].children.length, 5);
+  assert.equal(el['new-round'].hidden, true);
 });

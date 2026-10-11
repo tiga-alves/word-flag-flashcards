@@ -66,3 +66,39 @@ Carregar `design-system.css` antes de `styles.css`. Os controles compartilhados 
 O cursor começa no primeiro campo. Tab segue a ordem visual. Enter avança entre campos e, no último, confere a rodada. Não há checkbox ou etapa de ativação. Após conferir, a única ação principal visível é Nova rodada, que recebe o foco.
 
 Labels visualmente ocultos continuam associados aos campos. Foco de 2 px com afastamento de 3 px. Feedback inclui texto além de cor, e a pontuação é anunciada por `role="status"`. Transições respeitam movimento reduzido. O jogo permanece offline e sem API externa.
+
+## Atualização do jogo: tema claro e teclado
+
+A página do jogo agora sobrescreve os tokens em `styles.css`: fundo #f7f5ef, texto #292a27, destaque #926b07 e acerto #28653c. A página de exemplos preserva a referência original escura.
+
+Cinco bandeiras compactas compartilham um único conjunto de letras, com largura máxima de 650 px. Um campo nativo transparente recebe nomes em qualquer ordem, com edição pelo teclado e validação imediata, sem clicar nas letras. Acentos, espaços e hífens são opcionais. Rodadas evitam nomes em que um país seja prefixo de outro para não interromper a digitação do nome maior.
+
+Letras usadas ficam discretas e retornam ao apagar; um acerto remove suas letras e anima a bandeira. As animações respeitam `prefers-reduced-motion`. `audio.js` sintetiza sons curtos de digitação e um acorde de acerto usando Web Audio, iniciado somente após interação, com botão para silenciar. Nenhum áudio é baixado.
+
+## Referência visual atual: painéis claros
+
+O jogo adota o dashboard enviado como referência: fundo cinza #daddde, painéis brancos com bordas discretas e raio de 11 px, títulos em sans-serif, texto escuro e etiquetas verdes para acertos. A área principal mantém as cinco bandeiras, letras compartilhadas e digitação sem caixa. A coluna lateral mostra progresso semicircular e descobertas da rodada; ambos acompanham os acertos e reiniciam na nova rodada. A fonte monoespaçada fica restrita às letras e à digitação. O layout vira uma coluna no celular.
+
+## Tipografia atual
+
+Os dois painéis de ajuda abaixo do desafio foram removidos. A interface inteira usa Inter Variable local, incluindo letras, digitação e botões, com licença SIL OFL em `assets/fonts/Inter-LICENSE.txt`. A referência tipográfica é o site da Stripe, que usa Söhne; Inter é a alternativa livre escolhida para este projeto. Nenhuma fonte remota é carregada pelo jogo.
+
+## Interface simplificada e globo de fundo
+
+A interface mantém marca, bandeiras, letras compartilhadas, campo de digitação e progresso da rodada. Foram removidos os rótulos auxiliares marcados na referência, título interno do desafio, card de descobertas, etiqueta de validação e botão de som. Contador e ajuda de teclado continuam disponíveis para leitores de tela.
+
+O fundo usa um canvas decorativo local, sem receber cliques, com globo de pontos em rosa, violeta e azul. Painéis quase opacos mantêm a leitura do jogo. A animação respeita movimento reduzido e pausa em abas ocultas.
+
+## Progresso horário e resposta livre
+
+O título é “5 bandeiras aleatórias”. A resposta usa um único campo nativo no lugar das letras embaralhadas. Acertos mostram somente o nome do país, sem mensagem adicional no rodapé. O círculo tem cinco arcos separados, preenchidos em ordem horária independentemente da ordem das bandeiras acertadas. O centro exibe o contador /5, com transição vertical ascendente em cada incremento e retorno a zero na nova rodada.
+
+O globo mantém rotação contínua, um gradiente violeta/lavanda e brilho de quatro pontas em cada ponto, com fases individuais. Como solicitado, a preferência de movimento reduzido suaviza a rotação e as transições, sem congelar o globo ou o contador. O canvas pausa em abas ocultas.
+
+## Desempenho do fundo e das interações
+
+O globo usa WebGL quando disponível: geometria pré-calculada, textura de brilhos reutilizada e uma chamada de desenho por quadro. O modo Canvas alternativo reutiliza sprites, descarta pontos fora da tela e adapta a densidade ao orçamento de desenho. A resolução do fundo é limitada a três milhões de pixels físicos; eventos de redimensionamento são agrupados e abas ocultas pausam a animação.
+
+A digitação permanece nativa. As chaves dos países são normalizadas uma vez por rodada, e inserções ou colagens geram no máximo um toque de áudio por evento. O contador usa transform/opacity em sua própria camada; o desenho do arco leva cerca de 360 ms.
+
+Verificação local: `node scripts/benchmark-globe.cjs` mede a renderização Canvas com `@napi-rs/canvas` do runtime de desenvolvimento. É uma comparação do componente, não uma medição de FPS ou de latência do navegador. `node scripts/build-globe-data.cjs` regenera `globe-data.js` a partir dos contornos em `assets/globe-land.json`.

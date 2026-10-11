@@ -1,122 +1,164 @@
 (function () {
   'use strict';
   const grid = document.getElementById('flags-grid');
-  const form = document.getElementById('game-form');
-  const checkButton = document.getElementById('check-button');
-  const nextButton = document.getElementById('new-round');
+  const input = document.getElementById('country-input');
+  const next = document.getElementById('new-round');
   const status = document.getElementById('round-status');
   const counter = document.getElementById('filled-count');
-  let round = [];
-  let roundNumber = 0;
-  let checked = false;
-  let assetError = false;
-
-  function setStatus(title, detail, result = false) {
-    const heading = document.createElement('p');
-    heading.className = `status-title${result ? ' result-title' : ''}`;
-    heading.textContent = title;
-    const description = document.createElement('p');
-    description.textContent = detail;
-    status.replaceChildren(heading, description);
+  const keyOf = value => FlagGame.normalize(value).replace(/[^\p{L}]/gu, '');
+  const gauge = document.getElementById('progress-gauge');
+  const segments = document.getElementById('progress-segments');
+  const gaugeCount = document.getElementById('gauge-count');
+  const gaugeTotal = document.getElementById('gauge-total');
+  const menu = document.getElementById('game-modes');
+  const title = document.getElementById('game-title');
+  const answerHint = document.getElementById('answer-hint');
+  let mode = FlagModes[0];
+  const modeButtons = [];
+  let countries = [], previous = '', displayedScore = 0;
+  function createProgressSegments() {
+    segments.replaceChildren();
+    const step = 360 / countries.length;
+    const gap = Math.min(9, step * 0.18);
+    gauge.classList.toggle('gauge--dense', countries.length > 15);
+    gaugeCount.style.width = `${String(countries.length).length}ch`;
+    const point = angle => [120 + 92 * Math.cos(angle * Math.PI / 180), 120 + 92 * Math.sin(angle * Math.PI / 180)].join(' ');
+    countries.forEach((item, index) => {
+      const segment = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      segment.setAttribute('class', 'gauge-segment');
+      const start = -90 + index * step + gap;
+      const end = -90 + (index + 1) * step - gap;
+      for (const kind of ['track', 'fill']) {
+        const arc = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        arc.setAttribute('class', `gauge-${kind}`);
+        arc.setAttribute('d', `M ${point(start)} A 92 92 0 ${end - start > 180 ? 1 : 0} 1 ${point(end)}`);
+        arc.setAttribute('pathLength', '1');
+        segment.append(arc);
+      }
+      item.segment = segment;
+      segments.append(segment);
+    });
+    gauge.setAttribute('aria-valuemax', String(countries.length));
   }
-
-  function startRound(focus = false) {
-    round = FlagGame.sample(FlagCountries);
-    roundNumber++;
-    checked = false;
-    assetError = false;
-    checkButton.disabled = false;
-    checkButton.hidden = false;
-    checkButton.textContent = 'Conferir respostas';
-    nextButton.hidden = true;
-    document.getElementById('round-number').textContent = String(roundNumber).padStart(2, '0');
-    counter.textContent = '0 de 5 respostas preenchidas';
-    status.replaceChildren();
-    grid.replaceChildren();
-
+  function updateDashboard() {
+    const solved = countries.filter(item => item.solved);
+    countries.forEach((item, index) => item.segment.classList.toggle('complete', index < solved.length));
+    gauge.setAttribute('aria-valuenow', String(solved.length));
+    gauge.setAttribute('aria-valuetext', `${solved.length} de ${countries.length} países completos`);
+    gaugeTotal.textContent = `/${countries.length}`;
+    const digit = document.createElement('span');
+    digit.className = 'counter-digit';
+    digit.textContent = String(solved.length);
+    if (solved.length > displayedScore) {
+      const leaving = document.createElement('span');
+      leaving.className = 'counter-digit counter-digit--leaving';
+      leaving.textContent = String(displayedScore);
+      digit.className += ' counter-digit--entering';
+      gaugeCount.replaceChildren(leaving, digit);
+    } else {
+      gaugeCount.replaceChildren(digit);
+    }
+    displayedScore = solved.length;
+  }
+  function onInput(event) {
+    if (event.isComposing || input.disabled) return;
+    let prefix = 0, suffix = 0;
+    while (prefix < previous.length && prefix < input.value.length && previous[prefix] === input.value[prefix]) prefix++;
+    while (suffix < previous.length - prefix && suffix < input.value.length - prefix && previous[previous.length - suffix - 1] === input.value[input.value.length - suffix - 1]) suffix++;
+    if (/\p{L}/u.test(input.value.slice(prefix, input.value.length - suffix))) window.FlagAudio?.type();
+    previous = input.value;
+    const value = keyOf(input.value);
+    const match = value && countries.find(item => !item.solved && item.key === value);
+    const ambiguous = match && countries.some(item => !item.solved && item !== match && item.key.startsWith(value));
+    answerHint.hidden = !ambiguous;
+    if (ambiguous && !event.confirm) return;
+    if (match) {
+      answerHint.hidden = true;
+      match.solved = true;
+      match.card.classList.add('correct');
+      match.feedback.textContent = match.country.name;
+      updateDashboard();
+      input.value = '';
+      previous = '';
+      window.FlagAudio?.success();
+      const solved = countries.filter(item => item.solved).length;
+      counter.textContent = `${solved} de ${countries.length} países completos`;
+      status.textContent = '';
+      if (solved === countries.length) {
+        input.disabled = true;
+        next.hidden = false;
+        next.focus();
+      }
+    }
+  }
+  input.addEventListener('input', onInput);
+  input.addEventListener('compositionend', () => onInput({ isComposing: false }));
+  document.addEventListener('keydown', event => {
+    if (input.disabled || event.ctrlKey || event.metaKey || event.altKey || event.isComposing) return;
+    if (event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
+    if (!(event.key.length === 1 && /[\p{L} -]/u.test(event.key)) && event.key !== 'Backspace') return;
+    if (event.target.closest('button') && event.key === ' ') return;
+    event.preventDefault();
+    input.focus();
+    const start = input.selectionStart ?? input.value.length, end = input.selectionEnd ?? start;
+    if (event.key === 'Backspace') input.setRangeText('', start === end ? Math.max(0, start - 1) : start, end, 'end');
+    else input.setRangeText(event.key, start, end, 'end');
+    onInput({ isComposing: false });
+  });
+  function startRound() {
+    const round = [];
+    const pool = mode.codes ? FlagCountries.filter(country => mode.codes.includes(country.code)) : FlagCountries;
+    for (const country of FlagGame.sample(pool, pool.length)) {
+      const name = keyOf(country.name);
+      if (mode.id === 'random' && round.some(other => name.startsWith(keyOf(other.name)) || keyOf(other.name).startsWith(name))) continue;
+      round.push(country);
+      if (mode.id === 'random' && round.length === 5) break;
+    }
+    title.textContent = mode.name;
+    document.title = mode.name;
+    modeButtons.forEach(({ button, option }) => button.setAttribute('aria-pressed', String(option === mode)));
+    grid.classList.toggle('flags-grid--collection', mode.id !== 'random');
+    grid.scrollTop = 0;
+    answerHint.hidden = true;
+    countries = []; previous = ''; displayedScore = 0;
+    input.value = ''; input.disabled = false; next.hidden = true;
+    status.textContent = ''; grid.replaceChildren();
+    counter.textContent = `0 de ${round.length} países completos`;
     round.forEach((country, index) => {
-      const card = document.createElement('div');
-      card.className = 'flag-card';
-      const stage = document.createElement('div');
-      stage.className = 'flag-stage';
-      const image = document.createElement('img');
-      image.alt = `Bandeira ${index + 1} da rodada`;
-      image.draggable = false;
+      const card = document.createElement('div'); card.className = 'flag-card';
+      card.style.setProperty('--card-index', index);
+      const stage = document.createElement('div'); stage.className = 'flag-stage';
+      const image = document.createElement('img'); image.alt = `Bandeira ${index + 1} da rodada`; image.draggable = false;
+      image.loading = index < 15 ? 'eager' : 'lazy';
+      image.decoding = 'async';
       image.addEventListener('error', () => {
         if (!card.isConnected) return;
-        assetError = true;
-        checkButton.disabled = true;
-        checkButton.hidden = true;
-        nextButton.hidden = false;
-        image.hidden = true;
         stage.textContent = 'Bandeira indisponível';
-        setStatus('Não foi possível carregar uma bandeira.', 'Mantenha a pasta assets junto ao index.html ou tente uma nova rodada.');
+        status.textContent = 'Não foi possível carregar uma bandeira. Tente uma nova rodada.';
+        next.hidden = false;
       });
-      image.src = country.flag;
-      stage.append(image);
-      const label = document.createElement('label');
-      label.htmlFor = `answer-${index}`;
-      label.textContent = `PAÍS ${String(index + 1).padStart(2, '0')}`;
-      const input = document.createElement('input');
-      input.id = label.htmlFor;
-      input.name = `answer-${index}`;
-      input.type = 'text';
-      input.className = 'ds-input';
-      input.placeholder = 'Nome do país';
-      input.spellcheck = false;
-      input.autocomplete = 'off';
-      input.setAttribute('autocorrect', 'off');
-      input.setAttribute('aria-describedby', `feedback-${index}`);
-      input.setAttribute('enterkeyhint', index < 4 ? 'next' : 'done');
-      input.addEventListener('keydown', event => {
-        if (event.key !== 'Enter' || event.isComposing || checked) return;
-        if (index < 4) {
-          event.preventDefault();
-          grid.querySelectorAll('input')[index + 1].focus();
-        }
-      });
-      const feedback = document.createElement('p');
-      feedback.id = `feedback-${index}`;
-      feedback.className = 'feedback';
-      card.append(stage, label, input, feedback);
-      grid.append(card);
+      image.src = country.flag; stage.append(image);
+      const feedback = document.createElement('p'); feedback.className = 'feedback'; feedback.textContent = '…';
+      card.append(stage, feedback); grid.append(card);
+      countries.push({ country, card, feedback, solved: false, key: keyOf(country.name) });
     });
-    if (focus) grid.querySelector('input').focus();
+    createProgressSegments();
+    updateDashboard();
+    input.focus({ preventScroll: true });
   }
-
-  form.addEventListener('input', () => {
-    if (checked) return;
-    const filled = [...grid.querySelectorAll('input')].filter(input => input.value.trim() !== '').length;
-    counter.textContent = `${filled} de 5 respostas preenchidas`;
-  });
-
-  form.addEventListener('submit', event => {
+  document.getElementById('game-form').addEventListener('submit', event => {
     event.preventDefault();
-    if (checked || assetError) return;
-    checked = true;
-    const inputs = [...grid.querySelectorAll('input')];
-    const { results, score } = FlagGame.grade(round, inputs.map(input => input.value));
-    results.forEach(({ country, correct }, index) => {
-      const card = inputs[index].closest('.flag-card');
-      card.classList.add(correct ? 'correct' : 'incorrect');
-      inputs[index].disabled = true;
-      const feedback = card.querySelector('.feedback');
-      const verdict = document.createElement('span');
-      verdict.textContent = correct ? '✓ Acertou!' : inputs[index].value.trim() ? '× Não foi dessa vez' : '× Sem resposta';
-      const name = document.createElement('strong');
-      name.textContent = country.name;
-      feedback.replaceChildren(verdict, name);
-    });
-    const messages = ['Cada rodada é uma chance de descobrir novos países.', 'Um país reconhecido. Vamos explorar mais?', 'Dois países reconhecidos. Continue explorando!', 'Bom trabalho! Mais uma volta ao mundo?', 'Muito bem! Faltou só uma bandeira.', 'Volta ao mundo completa. Você acertou todas!'];
-    setStatus(`Você acertou ${score} de 5!`, messages[score], true);
-    counter.textContent = 'Rodada concluída';
-    checkButton.disabled = true;
-    checkButton.textContent = 'Respostas conferidas';
-    checkButton.hidden = true;
-    nextButton.hidden = false;
-    nextButton.focus();
+    onInput({ isComposing: false, confirm: true });
   });
-
-  nextButton.addEventListener('click', () => startRound(true));
-  startRound(true);
+  for (const option of FlagModes) {
+    const button = document.createElement('button');
+    button.type = 'button'; button.className = 'mode-button';
+    const label = document.createElement('span'); label.textContent = option.name;
+    const count = document.createElement('span'); count.className = 'mode-count'; count.textContent = String(option.count);
+    button.append(label, count);
+    button.addEventListener('click', () => { if (mode !== option) { mode = option; startRound(); } });
+    modeButtons.push({ button, option }); menu.append(button);
+  }
+  next.addEventListener('click', startRound);
+  startRound();
 })();

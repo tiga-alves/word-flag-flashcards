@@ -1,14 +1,16 @@
 # Volta ao mundo
 
-Jogo de bandeiras em português. Cinco países distintos por rodada, respostas digitadas e pontuação de 0 a 5.
+Jogo de bandeiras em português. Cinco países distintos por rodada, digitação livre e validação instantânea.
 
 ## Como abrir
 
 Dê dois cliques em **index.html** para abrir no navegador. Mantenha os arquivos e a pasta **assets** juntos. Não precisa instalar nada, iniciar servidor ou ter internet.
 
-O primeiro campo já recebe o cursor ao abrir. Clique diretamente em qualquer campo para digitar, use Tab ou Enter para avançar e clique em **Conferir respostas** (ou pressione Enter no último campo). Respostas vazias contam como erro. A rodada termina após a conferência; clique em **Nova rodada** para jogar novamente.
+Digite o nome de qualquer país das cinco bandeiras. A área de resposta mostra somente as letras digitadas; use Backspace, Delete ou seleção de texto para corrigir. Ao acertar, aparece apenas o nome sob a bandeira e o campo fica pronto para o próximo país. Acentos, espaços e hífens são opcionais.
 
-Aceita nomes em português, sem diferenciar acentos, maiúsculas ou espaços extras. Também aceita variantes cadastradas, como EUA, Holanda e República Tcheca. Não usa correção aproximada: países com nomes parecidos continuam distintos.
+O progresso tem cinco segmentos, preenchidos sempre no sentido horário. O contador central mostra 0/5 até 5/5, com os números subindo a cada acerto. Depois dos cinco acertos, clique em **Nova rodada**.
+
+O globo roxo de pontos gira ao fundo com brilhos individuais. A preferência por movimento reduzido diminui a velocidade, sem desligar a animação solicitada; abas ocultas pausam a renderização. Sons e todos os recursos funcionam offline.
 
 ## Catálogo e imagens
 
@@ -20,12 +22,22 @@ As bandeiras SVG são da coleção [flag-icons](https://github.com/lipis/flag-ic
 
 Abra `design-system.html` para ver cores, tipografia, espaçamentos e componentes. Os tokens e controles compartilhados estão em `design-system.css`; decisões e regras de uso estão em `DESIGN-SYSTEM.md`. O jogo usa essa mesma base visual.
 
-Referência atual: Monkeytype / Serika Dark. O código fonte completo baixado está na pasta `design system`, com a licença original preservada. Essa pasta é somente referência; o jogo usa a fonte local em `assets/fonts` e não precisa executar ou instalar o Monkeytype.
+Referência atual: Monkeytype, adaptada a um tema claro no jogo. O código fonte completo baixado está na pasta `design system`, com a licença original preservada. Essa pasta é somente referência; o jogo usa a fonte local em `assets/fonts` e não precisa executar ou instalar o Monkeytype.
 
 No GitHub, essa referência é um submódulo fixado na versão utilizada. Para baixar também o código do Monkeytype, clone este projeto com `git clone --recurse-submodules <URL-do-repositório>`. Em uma cópia já clonada, execute `git submodule update --init`. O jogo funciona mesmo sem baixar o submódulo.
 
 ## Verificação e manutenção
 
-Com Node.js disponível, execute `node --test tests/game.test.cjs` para verificar catálogo, imagens, normalização, sorteio e pontuação.
+Com Node.js disponível, execute `node --test tests/*.test.cjs` para verificar catálogo, imagens, normalização, sorteio e pontuação.
 
 `node scripts/download-flags.cjs` baixa novamente as bandeiras e a licença. Esse comando exige internet e serve apenas para manutenção; não é necessário para jogar.
+
+O fundo prioriza WebGL e possui um modo Canvas adaptativo para ambientes sem aceleração. A geometria pré-calculada fica em `globe-data.js`; mantenha esse arquivo junto aos demais arquivos do jogo. Para regenerá-la, execute `node scripts/build-globe-data.cjs`.
+
+Modos de jogo: o menu lateral oferece 5 bandeiras aleatórias, África, Ásia,
+Europa, América do Norte (incluindo América Central e Caribe), América do Sul,
+Oceania e todas as 195 bandeiras. Cada continente inclui todos os países da
+região; mudar de modo inicia uma nova rodada. As coleções têm rolagem própria e
+imagens carregadas conforme necessário. Nomes ambíguos, como Guiné e Sudão,
+podem ser confirmados com Enter quando outro nome ainda começa pelo mesmo texto;
+os demais acertos continuam instantâneos.

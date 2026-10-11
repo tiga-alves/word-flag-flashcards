@@ -1,32 +1,59 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Jogo de bandeiras</title>
+  <title>5 bandeiras aleatórias</title>
   <link rel="stylesheet" href="design-system.css">
   <link rel="stylesheet" href="styles.css">
   <script defer src="countries.js"></script>
   <script defer src="game.js"></script>
+  <script defer src="modes.js"></script>
+  <script defer src="audio.js"></script>
   <script defer src="app.js"></script>
+  <script defer src="globe-data.js"></script>
+  <script defer src="globe.js"></script>
 </head>
 <body>
+  <canvas id="world-background" aria-hidden="true"></canvas>
   <main class="page">
     <header class="intro">
-      <h1>Que países são estes?</h1>
-      <p>Digite o nome abaixo de cada bandeira.</p>
+      <h1 id="game-title">5 bandeiras aleatórias</h1>
     </header>
-    <section aria-labelledby="round-title">
-      <div class="sr-only"><h2 id="round-title">Rodada <span id="round-number">01</span></h2><p id="filled-count">0 de 5 respostas preenchidas</p></div>
-      <form id="game-form" autocomplete="off">
-        <div class="flags-grid" id="flags-grid"></div>
-        <div class="round-bottom">
-          <div id="round-status" class="round-status" role="status" aria-live="polite" aria-atomic="true"></div>
-          <div class="actions"><button type="submit" id="check-button" class="ds-button">Conferir respostas</button><button type="button" id="new-round" class="ds-button" hidden>Nova rodada</button></div>
-        </div>
-      </form>
-      <noscript><p class="notice">Ative o JavaScript no navegador para jogar.</p></noscript>
-    </section>
+    <div class="dashboard">
+      <aside class="sidebar">
+        <nav class="panel mode-panel" aria-label="Tipo de jogo">
+          <p class="mode-heading">Escolha seu desafio</p>
+          <div id="game-modes" class="game-modes"></div>
+        </nav>
+        <section class="panel progress-panel" aria-label="Seu progresso">
+          <div class="gauge" id="progress-gauge" role="progressbar" aria-label="Países descobertos" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0">
+            <svg id="progress-segments" viewBox="0 0 240 240" aria-hidden="true" focusable="false"></svg>
+            <div class="gauge-value" aria-hidden="true"><span id="gauge-count" class="gauge-count">0</span><span id="gauge-total" class="gauge-total">/5</span></div>
+          </div>
+          <p id="filled-count" class="sr-only" aria-live="polite">0 de 5 países completos</p>
+        </section>
+      </aside>
+      <div class="main-column">
+        <section class="panel game-panel" aria-label="Desafio de bandeiras">
+          <p class="game-description">Reconheça as bandeiras e digite o nome de qualquer país.</p>
+          <form id="game-form" autocomplete="off">
+            <div class="flags-grid" id="flags-grid"></div>
+            <div class="typing-area">
+              <label class="sr-only" for="country-input">Digite o nome de qualquer país das bandeiras</label>
+              <input id="country-input" class="country-input" type="text" placeholder="digite um país…" spellcheck="false" autocomplete="off" autocapitalize="none" aria-describedby="typing-hint">
+              <p id="typing-hint" class="sr-only">Digite qualquer um dos países · Backspace para corrigir</p>
+            </div>
+            <p id="answer-hint" class="answer-hint" hidden>Enter para confirmar este país, ou continue digitando um nome maior.</p>
+            <div class="round-bottom">
+              <div id="round-status" class="round-status" role="status" aria-live="polite" aria-atomic="true"></div>
+              <button type="button" id="new-round" class="ds-button" hidden>Nova rodada ↗</button>
+            </div>
+          </form>
+          <noscript><p class="notice">Ative o JavaScript no navegador para jogar.</p></noscript>
+        </section>
+      </div>
+    </div>
   </main>
 </body>
 </html>
