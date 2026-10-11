@@ -60,6 +60,36 @@
     }
     displayedScore = solved.length;
   }
+  function completeCountry(item, revealed = false, refresh = true) {
+    item.solved = true;
+    item.revealed = revealed;
+    item.card.classList.add(revealed ? 'revealed' : 'correct');
+    item.feedback.textContent = item.country.name;
+    item.note.textContent = revealed ? 'Resposta revelada' : '';
+    if (!refresh) return;
+    updateDashboard();
+    const solved = countries.filter(country => country.solved).length;
+    counter.textContent = `${solved} de ${countries.length} países completos`;
+    status.textContent = '';
+    if (!revealed) window.FlagAudio?.success();
+    if (solved === countries.length) {
+      const revealedCount = countries.filter(country => country.revealed).length;
+      const correctCount = countries.length - revealedCount;
+      status.textContent = `Rodada concluída! Acertos: ${correctCount} · Respostas reveladas: ${revealedCount}.`;
+      input.disabled = true;
+      document.getElementById('reveal-button').disabled = true;
+      next.hidden = false;
+      next.focus();
+    }
+  }
+  function revealAll() {
+    const pending = countries.filter(country => !country.solved);
+    if (!pending.length) return;
+    input.value = '';
+    previous = '';
+    answerHint.hidden = true;
+    pending.forEach((item, index) => completeCountry(item, true, index === pending.length - 1));
+  }
   function onInput(event) {
     if (event.isComposing || input.disabled) return;
     let prefix = 0, suffix = 0;
@@ -68,33 +98,27 @@
     if (/\p{L}/u.test(input.value.slice(prefix, input.value.length - suffix))) window.FlagAudio?.type();
     previous = input.value;
     const value = keyOf(input.value);
-    const match = value && countries.find(item => !item.solved && item.key === value);
-    const ambiguous = match && countries.some(item => !item.solved && item !== match && item.key.startsWith(value));
+    const match = value && countries.find(item => !item.solved && item.keys.includes(value));
+    const ambiguous = match && countries.some(item => !item.solved && item !== match && item.keys.some(key => key.startsWith(value)));
     answerHint.hidden = !ambiguous;
     if (ambiguous && !event.confirm) return;
     if (match) {
       answerHint.hidden = true;
-      match.solved = true;
-      match.card.classList.add('correct');
-      match.feedback.textContent = match.country.name;
-      updateDashboard();
       input.value = '';
       previous = '';
-      window.FlagAudio?.success();
-      const solved = countries.filter(item => item.solved).length;
-      counter.textContent = `${solved} de ${countries.length} países completos`;
-      status.textContent = '';
-      if (solved === countries.length) {
-        input.disabled = true;
-        next.hidden = false;
-        next.focus();
-      }
+      completeCountry(match);
     }
   }
+  document.getElementById('reveal-button').addEventListener('click', revealAll);
   input.addEventListener('input', onInput);
   input.addEventListener('compositionend', () => onInput({ isComposing: false }));
   document.addEventListener('keydown', event => {
     if (input.disabled || event.ctrlKey || event.metaKey || event.altKey || event.isComposing) return;
+    if (event.key === '1' && !event.shiftKey) {
+      event.preventDefault();
+      if (!event.repeat) revealAll();
+      return;
+    }
     if (event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
     if (!(event.key.length === 1 && /[\p{L} -]/u.test(event.key)) && event.key !== 'Backspace') return;
     if (event.target.closest('button') && event.key === ' ') return;
@@ -122,6 +146,7 @@
     answerHint.hidden = true;
     countries = []; previous = ''; displayedScore = 0;
     input.value = ''; input.disabled = false; next.hidden = true;
+    document.getElementById('reveal-button').disabled = false;
     status.textContent = ''; grid.replaceChildren();
     counter.textContent = `0 de ${round.length} países completos`;
     round.forEach((country, index) => {
@@ -139,8 +164,9 @@
       });
       image.src = country.flag; stage.append(image);
       const feedback = document.createElement('p'); feedback.className = 'feedback'; feedback.textContent = '…';
-      card.append(stage, feedback); grid.append(card);
-      countries.push({ country, card, feedback, solved: false, key: keyOf(country.name) });
+      const note = document.createElement('p'); note.className = 'feedback-note';
+      card.append(stage, feedback, note); grid.append(card);
+      countries.push({ country, card, feedback, note, solved: false, revealed: false, keys: [...new Set(country.answers.map(keyOf))] });
     });
     createProgressSegments();
     updateDashboard();

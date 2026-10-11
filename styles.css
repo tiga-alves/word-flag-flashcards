@@ -116,3 +116,15 @@ h2 { font-size:11px; font-weight:550; letter-spacing:.025em; }
   .mode-heading { margin: 6px 8px 10px; }
   .flags-grid--collection { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
+.shortcut-hint { margin: 8px 0; text-align: center; color: #767080; font-size: 12px; line-height: 1.6; }
+.shortcut-hint kbd { border: 1px solid currentColor; border-radius: 4px; padding: 1px 5px; font: inherit; }
+.feedback-note { margin: 3px 0 0; font-size: 10px; line-height: 1.5; color: #767080; }
+.feedback-note:empty { display: none; }
+.correct .feedback { letter-spacing: normal; color: var(--ds-success-700); }
+.revealed .feedback { letter-spacing: normal; color: #765119; }
+.revealed { box-shadow: inset 0 0 0 1px #b58b44; }
+
+.reveal-button { background: transparent; color: inherit; border: 1px solid #b0a9b7; border-radius: 5px; padding: 4px 8px; font: inherit; cursor: pointer; }
+.reveal-button:focus-visible { outline: 2px solid #765119; outline-offset: 3px; }
+.reveal-button:disabled { opacity: .5; cursor: default; }

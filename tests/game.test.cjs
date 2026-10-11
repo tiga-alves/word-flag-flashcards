@@ -88,7 +88,7 @@ class Element {
 function appFixture() {
   const elements = {};
   const document = { events: {}, addEventListener(type, callback) { this.events[type] = callback; }, getElementById: id => elements[id], createElement: tag => new Element(tag, document), createElementNS: (namespace, tag) => new Element(tag, document) };
-  for (const [id, tag] of Object.entries({ 'game-modes': 'div', 'game-title': 'h1', 'answer-hint': 'p', 'flags-grid': 'div', 'game-form': 'form', 'country-input': 'input', 'gauge-count': 'span', 'gauge-total': 'span', 'new-round': 'button', 'round-status': 'div', 'filled-count': 'p', 'progress-gauge': 'div', 'progress-segments': 'svg' })) elements[id] = new Element(tag, document);
+  for (const [id, tag] of Object.entries({ 'reveal-button': 'button', 'game-modes': 'div', 'game-title': 'h1', 'answer-hint': 'p', 'flags-grid': 'div', 'game-form': 'form', 'country-input': 'input', 'gauge-count': 'span', 'gauge-total': 'span', 'new-round': 'button', 'round-status': 'div', 'filled-count': 'p', 'progress-gauge': 'div', 'progress-segments': 'svg' })) elements[id] = new Element(tag, document);
   const deterministicGame = { normalize, grade, sample: (list, count = 5) => sample(list, count, () => 0.9999) };
   vm.runInNewContext(fs.readFileSync(path.join(base, 'app.js'), 'utf8'), { document, window: {}, FlagModes: modes, FlagCountries: countries, FlagGame: deterministicGame });
   return { elements, document };
@@ -112,7 +112,8 @@ test('app: digitação livre, edição e nomes corretos em qualquer ordem', () =
     input.events.input({});
     assert.ok(cards[index].matches('.correct'));
     assert.equal(cards[index].querySelector('.feedback').textContent, countries[index].name);
-    assert.equal(el['round-status'].textContent, '');
+    if (step < 4) assert.equal(el['round-status'].textContent, '');
+    else assert.match(el['round-status'].textContent, /Acertos: 5/);
     assert.equal(input.value, '');
     assert.equal(el['filled-count'].textContent, `${step + 1} de 5 países completos`);
   });
@@ -269,4 +270,78 @@ test('mundo: nomes com prefixos continuam digitáveis e todos os 195 podem ser c
   assert.equal(input.disabled, false);
   assert.equal(el['flags-grid'].children.length, 5);
   assert.equal(el['new-round'].hidden, true);
+});
+
+
+test('app: aliases do catálogo são aceitos, preservando nomes maiores de outros países', () => {
+  const { elements: el } = appFixture();
+  el['game-modes'].children[7].events.click();
+  const input = el['country-input'];
+  for (const alias of ['Qatar', 'Benin', 'Bósnia', 'EUA', 'Holanda']) {
+    input.value = alias; input.events.input({});
+    assert.equal(input.value, '');
+  }
+  assert.equal(el['progress-gauge'].attributes['aria-valuenow'], '5');
+  input.value = 'Guiné'; input.events.input({});
+  assert.equal(input.value, 'Guiné');
+  assert.equal(el['answer-hint'].hidden, false);
+  el['game-form'].events.submit({ preventDefault() {} });
+  assert.equal(input.value, '');
+  assert.equal(el['progress-gauge'].attributes['aria-valuenow'], '6');
+});
+
+test('app: atalho 1 revela todas, preserva acertos e ignora repetição e modificadores', () => {
+  const { elements: el, document } = appFixture();
+  const input = el['country-input'];
+  const cards = el['flags-grid'].children;
+  const press = (options = {}) => {
+    let prevented = false;
+    document.events.keydown({ key: '1', target: input, preventDefault() { prevented = true; }, ...options });
+    return prevented;
+  };
+  input.value = countries[0].name; input.events.input({});
+  input.value = 'rascunho';
+  for (const options of [{ ctrlKey: true }, { altKey: true }, { metaKey: true }, { shiftKey: true }, { isComposing: true }]) assert.equal(press(options), false);
+  assert.equal(press({ repeat: true }), true);
+  assert.equal(input.value, 'rascunho');
+  assert.equal(cards[1].querySelector('.feedback').textContent, '…');
+  assert.equal(press(), true);
+  assert.equal(input.value, '');
+  assert.ok(cards[0].matches('.correct'));
+  assert.equal(cards[0].matches('.revealed'), false);
+  for (const [index, card] of cards.entries()) {
+    assert.equal(card.querySelector('.feedback').textContent, countries[index].name);
+    if (index > 0) {
+      assert.ok(card.matches('.revealed'));
+      assert.equal(card.matches('.correct'), false);
+      assert.equal(card.querySelector('.feedback-note').textContent, 'Resposta revelada');
+    }
+  }
+  assert.match(el['round-status'].textContent, /Acertos: 1 · Respostas reveladas: 4/);
+  assert.equal(el['progress-gauge'].attributes['aria-valuenow'], '5');
+  assert.equal(input.disabled, true);
+  assert.equal(el['reveal-button'].disabled, true);
+  assert.equal(document.activeElement, el['new-round']);
+  el['new-round'].events.click();
+  assert.equal(el['reveal-button'].disabled, false);
+  assert.equal(input.disabled, false);
+  assert.equal(el['progress-gauge'].attributes['aria-valuenow'], '0');
+  assert.ok(el['flags-grid'].children.every(card => !card.matches('.revealed')));
+  assert.match(fs.readFileSync(path.join(base, 'index.html'), 'utf8'), /aria-keyshortcuts="1"/);
+});
+
+test('mundo: botão revela todos os 195 países e limpa aviso de nome ambíguo', () => {
+  const { elements: el } = appFixture();
+  el['game-modes'].children[7].events.click();
+  el['country-input'].value = 'Guiné'; el['country-input'].events.input({});
+  assert.equal(el['answer-hint'].hidden, false);
+  el['reveal-button'].events.click();
+  assert.equal(el['country-input'].value, '');
+  assert.equal(el['answer-hint'].hidden, true);
+  assert.equal(el['flags-grid'].querySelectorAll('.revealed').length, 195);
+  assert.equal(el['progress-gauge'].attributes['aria-valuenow'], '195');
+  assert.match(el['round-status'].textContent, /Acertos: 0 · Respostas reveladas: 195/);
+  const status = el['round-status'].textContent;
+  el['reveal-button'].events.click();
+  assert.equal(el['round-status'].textContent, status);
 });
