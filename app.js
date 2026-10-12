@@ -115,12 +115,15 @@
   input.addEventListener('input', onInput);
   input.addEventListener('compositionend', () => onInput({ isComposing: false }));
   document.addEventListener('keydown', event => {
-    if (input.disabled || event.ctrlKey || event.metaKey || event.altKey || event.isComposing) return;
-    if (event.key === '1' && !event.shiftKey) {
+    if (event.ctrlKey || event.metaKey || event.altKey || event.isComposing) return;
+    const shortcut = { '1': revealAll, '2': toggleShuffle, '3': restartRound }[event.key];
+    if (shortcut && !event.shiftKey) {
+      if (event.key === '1' && input.disabled) return;
       event.preventDefault();
-      if (!event.repeat) revealAll();
+      if (!event.repeat) shortcut();
       return;
     }
+    if (input.disabled) return;
     if (event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
     if (!(event.key.length === 1 && /[\p{L} -]/u.test(event.key)) && event.key !== 'Backspace') return;
     if (event.target.closest('button') && event.key === ' ') return;
@@ -194,10 +197,10 @@
     button.addEventListener('click', () => { if (mode !== option) { mode = option; startRound(); } });
     modeButtons.push({ button, option }); menu.append(button);
   }
-  shuffleButton.addEventListener('click', () => {
+  function toggleShuffle() {
     shuffleEnabled = !shuffleEnabled;
     shuffleButton.setAttribute('aria-pressed', String(shuffleEnabled));
-    shuffleButton.textContent = `Shuffle: ${shuffleEnabled ? 'ligado' : 'desligado'}`;
+    document.getElementById('shuffle-label').textContent = `Shuffle: ${shuffleEnabled ? 'ligado' : 'desligado'}`;
     countries = ordered(countries, item => item.country.name);
     grid.replaceChildren(...countries.map(item => item.card));
     countries.forEach((item, index) => {
@@ -207,8 +210,12 @@
     });
     createProgressSegments();
     updateDashboard();
-  });
-  document.getElementById('restart-round').addEventListener('click', () => renderRound(countries.map(item => item.country)));
+  }
+  function restartRound() {
+    renderRound(countries.map(item => item.country));
+  }
+  shuffleButton.addEventListener('click', toggleShuffle);
+  document.getElementById('restart-round').addEventListener('click', restartRound);
   next.addEventListener('click', startRound);
   startRound();
 })();

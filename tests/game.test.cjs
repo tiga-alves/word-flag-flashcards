@@ -88,7 +88,7 @@ class Element {
 function appFixture() {
   const elements = {};
   const document = { events: {}, addEventListener(type, callback) { this.events[type] = callback; }, getElementById: id => elements[id], createElement: tag => new Element(tag, document), createElementNS: (namespace, tag) => new Element(tag, document) };
-  for (const [id, tag] of Object.entries({ 'shuffle-button': 'button', 'restart-round': 'button', 'reveal-button': 'button', 'game-modes': 'div', 'game-title': 'h1', 'answer-hint': 'p', 'flags-grid': 'div', 'game-form': 'form', 'country-input': 'input', 'gauge-count': 'span', 'gauge-total': 'span', 'new-round': 'button', 'round-status': 'div', 'filled-count': 'p', 'progress-gauge': 'div', 'progress-segments': 'svg' })) elements[id] = new Element(tag, document);
+  for (const [id, tag] of Object.entries({ 'shuffle-label': 'span', 'shuffle-button': 'button', 'restart-round': 'button', 'reveal-button': 'button', 'game-modes': 'div', 'game-title': 'h1', 'answer-hint': 'p', 'flags-grid': 'div', 'game-form': 'form', 'country-input': 'input', 'gauge-count': 'span', 'gauge-total': 'span', 'new-round': 'button', 'round-status': 'div', 'filled-count': 'p', 'progress-gauge': 'div', 'progress-segments': 'svg' })) elements[id] = new Element(tag, document);
   const deterministicGame = { normalize, grade, sample: (list, count = 5) => sample(list, count, () => 0.9999) };
   vm.runInNewContext(fs.readFileSync(path.join(base, 'app.js'), 'utf8'), { document, window: {}, FlagModes: modes, FlagCountries: countries, FlagGame: deterministicGame });
   return { elements, document };
@@ -398,5 +398,40 @@ test('reiniciar limpa a rodada atual e mantém países e preferência de shuffle
   assert.deepEqual(el['flags-grid'].querySelectorAll('img').map(image => image.src), alphabetic.map(country => country.flag));
   const html = fs.readFileSync(path.join(base, 'index.html'), 'utf8');
   assert.doesNotMatch(html, /id="shortcut-hint"/);
-  assert.match(html, /id="restart-round"[^>]*>Reiniciar/);
+  assert.match(html, /id="restart-round"[^>]*>[\s\S]*?Reiniciar/);
+});
+
+
+test('atalhos 2 e 3 funcionam com campo focado e rodada concluída sem inserir números', () => {
+  const { elements: el, document } = appFixture();
+  const input = el['country-input'];
+  const press = (key, options = {}) => {
+    let prevented = false;
+    document.events.keydown({ key, target: input, preventDefault() { prevented = true; }, ...options });
+    return prevented;
+  };
+  input.value = 'rascunho';
+  for (const key of ['2', '3']) {
+    for (const options of [{ ctrlKey: true }, { altKey: true }, { metaKey: true }, { shiftKey: true }, { isComposing: true }]) assert.equal(press(key, options), false);
+    assert.equal(press(key, { repeat: true }), true);
+    assert.equal(input.value, 'rascunho');
+  }
+  assert.equal(press('2'), true);
+  assert.equal(input.value, 'rascunho');
+  assert.equal(el['shuffle-button'].attributes['aria-pressed'], 'false');
+  assert.equal(el['shuffle-label'].textContent, 'Shuffle: desligado');
+  assert.equal(press('3'), true);
+  assert.equal(input.value, '');
+  assert.equal(document.activeElement, input);
+  press('1');
+  assert.equal(input.disabled, true);
+  assert.equal(press('2'), true);
+  assert.equal(el['shuffle-button'].attributes['aria-pressed'], 'true');
+  assert.equal(input.disabled, true);
+  assert.equal(press('3'), true);
+  assert.equal(input.disabled, false);
+  assert.equal(el['progress-gauge'].attributes['aria-valuenow'], '0');
+  const html = fs.readFileSync(path.join(base, 'index.html'), 'utf8');
+  assert.match(html, /aria-keyshortcuts="2"/);
+  assert.match(html, /aria-keyshortcuts="3"/);
 });
