@@ -87,8 +87,8 @@ h2 { font-size:11px; font-weight:550; letter-spacing:.025em; }
 .mode-button[aria-pressed="true"] { background: #eeebfa; color: #6544ae; font-weight: 600; }
 .mode-button:focus-visible { outline: 2px solid #8061ca; outline-offset: 2px; }
 .mode-count { flex: 0 0 auto; font-size: 11px; font-variant-numeric: tabular-nums; opacity: .7; }
-.flags-grid--collection { max-height: 46vh; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #d1cadd transparent; padding: 8px 6px; align-content: start; }
-.flags-grid--collection .flag-card { content-visibility: auto; contain-intrinsic-size: auto 125px; }
+.flags-grid--collection { padding: 8px 6px; align-content: start; grid-template-rows: repeat(3, auto); }
+.batch-controls { display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 12px; color: #767080; font-size: 12px; }
 .gauge--dense .gauge-track, .gauge--dense .gauge-fill { stroke-linecap: butt; }
 .gauge--dense .gauge-count { font-size: 32px; }
 .gauge--dense .gauge-total { font-size: 22px; }
@@ -103,7 +103,7 @@ h2 { font-size:11px; font-weight:550; letter-spacing:.025em; }
   .game-modes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mode-button { font-size: 12px; padding: 9px 8px; }
   .mode-count { display: none; }
-  .flags-grid--collection { max-height: 40vh; }
+
 }
 @media (max-width: 480px) {
   .sidebar { grid-template-columns: minmax(0, 1fr) 104px; gap: 10px; }

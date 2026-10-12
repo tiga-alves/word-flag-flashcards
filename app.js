@@ -18,6 +18,51 @@
   let mode = FlagModes[0];
   const modeButtons = [];
   let countries = [], previous = '', displayedScore = 0;
+  const batchControls = document.getElementById('batch-controls');
+  const batchLabel = document.getElementById('batch-label');
+  const batchPrevious = document.getElementById('batch-previous');
+  const batchNext = document.getElementById('batch-next');
+  const compactGrid = window.matchMedia?.('(max-width: 480px)');
+  let batch = 0, batchTimer;
+  const batchSize = () => compactGrid?.matches ? 9 : 15;
+  function cancelBatchAdvance() {
+    window.clearTimeout?.(batchTimer);
+    batchTimer = undefined;
+  }
+  function showBatch() {
+    cancelBatchAdvance();
+    const collection = mode.id !== 'random';
+    const size = batchSize();
+    const total = Math.ceil(countries.length / size);
+    batch = Math.max(0, Math.min(batch, total - 1));
+    countries.forEach((item, index) => {
+      item.card.hidden = collection && Math.floor(index / size) !== batch;
+      if (!item.card.hidden) item.image.loading = 'eager';
+    });
+    batchControls.hidden = !collection;
+    batchLabel.textContent = `Leva ${batch + 1} de ${total}`;
+    batchPrevious.disabled = batch === 0;
+    batchNext.disabled = batch === total - 1;
+  }
+  function scheduleBatchAdvance() {
+    if (mode.id === 'random' || countries.every(item => item.solved)) return;
+    const size = batchSize();
+    if (!countries.slice(batch * size, (batch + 1) * size).every(item => item.solved)) return;
+    cancelBatchAdvance();
+    batchTimer = window.setTimeout(() => {
+      const pending = countries.findIndex(item => !item.solved);
+      if (pending < 0) return;
+      batch = Math.floor(pending / batchSize());
+      showBatch();
+    }, 1000);
+  }
+  batchPrevious.addEventListener('click', () => { batch--; showBatch(); });
+  batchNext.addEventListener('click', () => { batch++; showBatch(); scheduleBatchAdvance(); });
+  compactGrid?.addEventListener('change', () => {
+    batch = Math.floor(Math.max(0, countries.findIndex(item => !item.solved)) / batchSize());
+    showBatch();
+  });
+
   function createProgressSegments() {
     segments.replaceChildren();
     const step = 360 / countries.length;
@@ -74,7 +119,9 @@
     counter.textContent = `${solved} de ${countries.length} países completos`;
     status.textContent = '';
     if (!revealed) window.FlagAudio?.success();
+    scheduleBatchAdvance();
     if (solved === countries.length) {
+      cancelBatchAdvance();
       const revealedCount = countries.filter(country => country.revealed).length;
       const correctCount = countries.length - revealedCount;
       status.textContent = `Rodada concluída! Acertos: ${correctCount} · Respostas reveladas: ${revealedCount}.`;
@@ -158,6 +205,8 @@
     return shuffleEnabled ? FlagGame.sample(list, list.length) : [...list].sort((a, b) => nameOf(a).localeCompare(nameOf(b), 'pt-BR'));
   }
   function renderRound(round) {
+    cancelBatchAdvance();
+    batch = 0;
     round = ordered(round, country => country.name);
     title.textContent = mode.name;
     document.title = mode.name;
@@ -189,6 +238,7 @@
       card.append(stage, feedback, note); grid.append(card);
       countries.push({ country, card, image, feedback, note, solved: false, revealed: false, keys: [...new Set(country.answers.map(keyOf))] });
     });
+    showBatch();
     createProgressSegments();
     updateDashboard();
     input.focus({ preventScroll: true });
@@ -215,13 +265,16 @@
     shuffleEnabled = !shuffleEnabled;
     shuffleButton.setAttribute('aria-pressed', String(shuffleEnabled));
     document.getElementById('shuffle-label').textContent = `Shuffle: ${shuffleEnabled ? 'ligado' : 'desligado'}`;
+    cancelBatchAdvance();
     countries = ordered(countries, item => item.country.name);
+    batch = Math.floor(Math.max(0, countries.findIndex(item => !item.solved)) / batchSize());
     grid.replaceChildren(...countries.map(item => item.card));
     countries.forEach((item, index) => {
       item.card.style.setProperty('--card-index', index);
       item.image.alt = `Bandeira ${index + 1} da rodada`;
       item.image.loading = index < 15 ? 'eager' : 'lazy';
     });
+    showBatch();
     createProgressSegments();
     updateDashboard();
   }

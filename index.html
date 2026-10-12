@@ -4,15 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>5 bandeiras aleatórias</title>
-  <link rel="stylesheet" href="design-system.css?v=controls-6">
-  <link rel="stylesheet" href="styles.css?v=controls-6">
-  <script defer src="countries.js?v=controls-6"></script>
-  <script defer src="game.js?v=controls-6"></script>
-  <script defer src="modes.js?v=controls-6"></script>
-  <script defer src="audio.js?v=controls-6"></script>
-  <script defer src="app.js?v=controls-6"></script>
-  <script defer src="globe-data.js?v=controls-6"></script>
-  <script defer src="globe.js?v=controls-6"></script>
+  <link rel="stylesheet" href="design-system.css?v=batches-9">
+  <link rel="stylesheet" href="styles.css?v=batches-9">
+  <script defer src="countries.js?v=batches-9"></script>
+  <script defer src="game.js?v=batches-9"></script>
+  <script defer src="modes.js?v=batches-9"></script>
+  <script defer src="audio.js?v=batches-9"></script>
+  <script defer src="app.js?v=batches-9"></script>
+  <script defer src="globe-data.js?v=batches-9"></script>
+  <script defer src="globe.js?v=batches-9"></script>
 </head>
 <body>
   <canvas id="world-background" aria-hidden="true"></canvas>
@@ -40,6 +40,11 @@
           <p class="game-description">Reconheça as bandeiras e digite o nome de qualquer país.</p>
           <form id="game-form" autocomplete="off">
             <div class="flags-grid" id="flags-grid"></div>
+            <div id="batch-controls" class="batch-controls" hidden>
+              <button id="batch-previous" type="button" class="reveal-button" aria-label="Leva anterior">←</button>
+              <span id="batch-label" role="status" aria-live="polite"></span>
+              <button id="batch-next" type="button" class="reveal-button" aria-label="Próxima leva">→</button>
+            </div>
             <div class="typing-area">
               <label class="sr-only" for="country-input">Digite o nome de qualquer país das bandeiras</label>
               <input id="country-input" class="country-input" type="text" placeholder="digite um país…" spellcheck="false" autocomplete="off" autocapitalize="none" aria-describedby="typing-hint">
