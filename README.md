@@ -46,7 +46,9 @@ Modos de jogo: o menu lateral oferece 5 bandeiras aleatórias, África, Ásia,
 Europa, América do Norte (incluindo América Central e Caribe), América do Sul,
 Oceania e todas as 195 bandeiras. Cada continente inclui todos os países da
 região; mudar de modo inicia uma nova rodada. Nos modos de continente e mundo, as bandeiras ficam em um carrossel horizontal:
-cada acerto sai após o feedback e as próximas deslizam da direita para a esquerda.
+as próximas deslizam da direita para a esquerda, preservando a última bandeira
+acertada e seu nome na faixa. Nenhuma bandeira é removida; role para trás para
+rever os acertos anteriores.
 É possível rolar a faixa para consultar outras bandeiras. Ao concluir ou revelar
 a rodada, todas ficam disponíveis para revisão. O modo de 5 bandeiras mantém
 a exibição fixa. As imagens são carregadas conforme necessário. Nomes ambíguos, como Guiné e Sudão,

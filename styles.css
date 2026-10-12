@@ -87,13 +87,11 @@ h2 { font-size:11px; font-weight:550; letter-spacing:.025em; }
 .mode-button[aria-pressed="true"] { background: #eeebfa; color: #6544ae; font-weight: 600; }
 .mode-button:focus-visible { outline: 2px solid #8061ca; outline-offset: 2px; }
 .mode-count { flex: 0 0 auto; font-size: 11px; font-variant-numeric: tabular-nums; opacity: .7; }
-/* Uma faixa: cada acerto libera espaço para a próxima bandeira à direita. */
+/* Faixa horizontal que preserva as bandeiras e os nomes já acertados. */
 .flags-grid--collection { display: flex; gap: 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin; scrollbar-color: #d1cadd transparent; padding: 8px 0; }
 .flags-grid--collection:focus-visible { outline: 2px solid #8061ca; outline-offset: 3px; }
-.flags-grid--collection .flag-card { flex: 0 0 20%; padding: 0 7px; overflow: hidden; transition: flex-basis 420ms ease, padding 420ms ease, opacity 200ms ease; }
+.flags-grid--collection .flag-card { flex: 0 0 20%; padding: 0 7px; overflow: hidden; }
 .flags-grid--collection .flag-stage, .flags-grid--collection .feedback { min-width: 90px; }
-.flags-grid--collection:not(.flags-grid--review) .correct { flex-basis: 0; padding-inline: 0; opacity: 0; transition-delay: 500ms; }
-.flags-grid--review .flag-card { transition: none; }
 .gauge--dense .gauge-track, .gauge--dense .gauge-fill { stroke-linecap: butt; }
 .gauge--dense .gauge-count { font-size: 32px; }
 .gauge--dense .gauge-total { font-size: 22px; }

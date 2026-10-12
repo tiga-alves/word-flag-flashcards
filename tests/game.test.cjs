@@ -78,6 +78,8 @@ class Element {
   replaceChildren(...children) { for (const child of this.children) child.parent = null; this.children = []; this.append(...children); }
   addEventListener(type, callback) { this.events[type] = callback; }
   setAttribute(key, value) { this.attributes[key] = value; if (key === 'class') this.className = value; }
+  getBoundingClientRect() { return { left: 0, width: 100 }; }
+  scrollTo({ left }) { this.scrollLeft = left; }
   focus() { this.document.activeElement = this; }
   matches(selector) { return selector.startsWith('.') ? this.className.split(' ').includes(selector.slice(1)) : this.tag === selector; }
   querySelectorAll(selector) { return this.children.flatMap(child => [...(child.matches(selector) ? [child] : []), ...child.querySelectorAll(selector)]); }
@@ -470,7 +472,7 @@ test('recursos CSS e JS usam a mesma versão para evitar mistura de cache', () =
   const html = fs.readFileSync(path.join(base, 'index.html'), 'utf8');
   const resources = [...html.matchAll(/(?:src|href)="([^" ]+\.(?:css|js)(?:\?[^" ]*)?)"/g)].map(match => match[1]);
   assert.equal(resources.length, 9);
-  assert.ok(resources.every(resource => resource.endsWith('?v=carousel-7')));
+  assert.ok(resources.every(resource => resource.endsWith('?v=carousel-8')));
   assert.match(fs.readFileSync(path.join(base, 'styles.css'), 'utf8'), /font: 400 12px\/1\.6 var\(--ds-font\)/);
 });
 

@@ -62,6 +62,14 @@
     }
     displayedScore = solved.length;
   }
+  function advanceCarousel(item) {
+    if (mode.id === 'random') return;
+    const card = item.card.getBoundingClientRect();
+    const viewport = grid.getBoundingClientRect();
+    // Keep the latest answer and one previous flag visible as the next flags enter.
+    const left = Math.max(grid.scrollLeft, grid.scrollLeft + card.left - viewport.left - card.width);
+    grid.scrollTo({ left, behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+  }
   function completeCountry(item, revealed = false, refresh = true) {
     item.solved = true;
     item.revealed = revealed;
@@ -73,10 +81,13 @@
     const solved = countries.filter(country => country.solved).length;
     counter.textContent = (mode.id === 'random' ? '' : `${item.country.name}. `) + `${solved} de ${countries.length} países completos`;
     status.textContent = '';
-    if (!revealed) window.FlagAudio?.success();
+    if (!revealed) {
+      window.FlagAudio?.success();
+      advanceCarousel(item);
+    }
     if (solved === countries.length) {
       grid.classList.add('flags-grid--review');
-      grid.scrollLeft = 0;
+      if (revealed) grid.scrollLeft = 0;
       const revealedCount = countries.filter(country => country.revealed).length;
       const correctCount = countries.length - revealedCount;
       status.textContent = `Rodada concluída! Acertos: ${correctCount} · Respostas reveladas: ${revealedCount}.`;
