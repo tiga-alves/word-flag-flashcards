@@ -8,7 +8,7 @@ body { margin:0; min-height:100vh; isolation:isolate; background:var(--ds-bg); c
 h1 { font-size:30px; letter-spacing:-1.3px; margin:0; font-weight:600; }
 h1 span { color:#82898c; }
 .dashboard { display:grid; grid-template-columns:330px minmax(0,1fr); gap:18px; align-items:start; }
-.sidebar,.main-column { display:grid; gap:18px; min-width:0; }
+.sidebar,.main-column { display:grid; gap:18px; }
 .panel { background:rgba(255,255,255,.96); border:1px solid #f0f0f0; border-radius:11px; padding:22px; box-shadow:0 9px 25px -24px #353a3e; }
 .panel-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; min-height:32px; }
 h2 { font-size:11px; font-weight:500; margin:0; color:#515151; line-height:1.5; }
@@ -26,7 +26,7 @@ h2 span { color:#222; font-size:18px; margin-right:8px; vertical-align:middle; }
 .gauge-fill { stroke:#6544ae; stroke-dasharray:1; stroke-dashoffset:1; opacity:0; transition:stroke-dashoffset 360ms cubic-bezier(.22,1,.36,1),opacity 120ms ease; }
 .gauge-segment.complete .gauge-fill { stroke-dashoffset:0; opacity:1; }
 .badge { display:inline-block; border-radius:4px; background:#edf8ec; color:#208637; padding:4px 7px; font-size:10px; font-weight:500; white-space:nowrap; }
-.game-panel { padding:22px 24px; min-width:0; }
+.game-panel { padding:22px 24px; }
 .game-description { margin:10px 0 26px; color:#757575; font-size:12px; line-height:1.6; }
 .flags-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:14px; }
 .flag-card { min-width:0; text-align:center; }
@@ -87,11 +87,8 @@ h2 { font-size:11px; font-weight:550; letter-spacing:.025em; }
 .mode-button[aria-pressed="true"] { background: #eeebfa; color: #6544ae; font-weight: 600; }
 .mode-button:focus-visible { outline: 2px solid #8061ca; outline-offset: 2px; }
 .mode-count { flex: 0 0 auto; font-size: 11px; font-variant-numeric: tabular-nums; opacity: .7; }
-/* Faixa horizontal que preserva as bandeiras e os nomes já acertados. */
-.flags-grid--collection { display: flex; gap: 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: thin; scrollbar-color: #d1cadd transparent; padding: 8px 0; }
-.flags-grid--collection:focus-visible { outline: 2px solid #8061ca; outline-offset: 3px; }
-.flags-grid--collection .flag-card { flex: 0 0 20%; padding: 0 7px; overflow: hidden; }
-.flags-grid--collection .flag-stage, .flags-grid--collection .feedback { min-width: 90px; }
+.flags-grid--collection { max-height: 46vh; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #d1cadd transparent; padding: 8px 6px; align-content: start; }
+.flags-grid--collection .flag-card { content-visibility: auto; contain-intrinsic-size: auto 125px; }
 .gauge--dense .gauge-track, .gauge--dense .gauge-fill { stroke-linecap: butt; }
 .gauge--dense .gauge-count { font-size: 32px; }
 .gauge--dense .gauge-total { font-size: 22px; }
@@ -106,7 +103,7 @@ h2 { font-size:11px; font-weight:550; letter-spacing:.025em; }
   .game-modes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mode-button { font-size: 12px; padding: 9px 8px; }
   .mode-count { display: none; }
-  .flags-grid--collection .flag-card { flex-basis: 25%; }
+  .flags-grid--collection { max-height: 40vh; }
 }
 @media (max-width: 480px) {
   .sidebar { grid-template-columns: minmax(0, 1fr) 104px; gap: 10px; }
@@ -117,8 +114,7 @@ h2 { font-size:11px; font-weight:550; letter-spacing:.025em; }
   .mode-panel { padding: 8px; }
   .game-modes { grid-template-columns: 1fr; }
   .mode-heading { margin: 6px 8px 10px; }
-  .flags-grid--collection .flag-card { flex-basis: 33.333333%; padding-inline: 3px; }
-  .flags-grid--collection .flag-stage, .flags-grid--collection .feedback { min-width: 70px; }
+  .flags-grid--collection { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 .game-controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 8px 0; color: #767080; font-size: 12px; line-height: 1.6; }

@@ -78,8 +78,6 @@ class Element {
   replaceChildren(...children) { for (const child of this.children) child.parent = null; this.children = []; this.append(...children); }
   addEventListener(type, callback) { this.events[type] = callback; }
   setAttribute(key, value) { this.attributes[key] = value; if (key === 'class') this.className = value; }
-  getBoundingClientRect() { return { left: 0, width: 100 }; }
-  scrollTo({ left }) { this.scrollLeft = left; }
   focus() { this.document.activeElement = this; }
   matches(selector) { return selector.startsWith('.') ? this.className.split(' ').includes(selector.slice(1)) : this.tag === selector; }
   querySelectorAll(selector) { return this.children.flatMap(child => [...(child.matches(selector) ? [child] : []), ...child.querySelectorAll(selector)]); }
@@ -472,7 +470,7 @@ test('recursos CSS e JS usam a mesma versão para evitar mistura de cache', () =
   const html = fs.readFileSync(path.join(base, 'index.html'), 'utf8');
   const resources = [...html.matchAll(/(?:src|href)="([^" ]+\.(?:css|js)(?:\?[^" ]*)?)"/g)].map(match => match[1]);
   assert.equal(resources.length, 9);
-  assert.ok(resources.every(resource => resource.endsWith('?v=carousel-8')));
+  assert.ok(resources.every(resource => resource.endsWith('?v=controls-6')));
   assert.match(fs.readFileSync(path.join(base, 'styles.css'), 'utf8'), /font: 400 12px\/1\.6 var\(--ds-font\)/);
 });
 
@@ -524,27 +522,4 @@ test('setas percorrem os oito modos, preservam shuffle e respeitam limites', () 
   el['game-modes'].children[0].events.click();
   assert.deepEqual(el['flags-grid'].children, cards);
   assert.match(fs.readFileSync(path.join(base, 'index.html'), 'utf8'), /aria-keyshortcuts="ArrowUp ArrowDown"/);
-});
-
-test('carrossel: revisão e posição são reiniciadas ao trocar modo ou reiniciar', () => {
-  const { elements: el } = appFixture();
-  const grid = el['flags-grid'];
-  assert.equal(grid.tabIndex, -1);
-  assert.ok(!grid.matches('.flags-grid--collection'));
-  el['game-modes'].children[1].events.click();
-  assert.equal(grid.tabIndex, 0);
-  assert.ok(grid.matches('.flags-grid--collection'));
-  grid.scrollLeft = 400;
-  el['reveal-button'].events.click();
-  assert.ok(grid.matches('.flags-grid--review'));
-  assert.equal(grid.scrollLeft, 0);
-  el['restart-round'].events.click();
-  assert.ok(!grid.matches('.flags-grid--review'));
-  assert.equal(grid.querySelectorAll('.correct').length, 0);
-  grid.scrollLeft = 200;
-  el['shuffle-button'].events.click();
-  assert.equal(grid.scrollLeft, 0);
-  el['game-modes'].children[0].events.click();
-  assert.ok(!grid.matches('.flags-grid--collection'));
-  assert.equal(grid.children.length, 5);
 });
