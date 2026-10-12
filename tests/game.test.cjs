@@ -472,7 +472,7 @@ test('recursos CSS e JS usam a mesma versão para evitar mistura de cache', () =
   const html = fs.readFileSync(path.join(base, 'index.html'), 'utf8');
   const resources = [...html.matchAll(/(?:src|href)="([^" ]+\.(?:css|js)(?:\?[^" ]*)?)"/g)].map(match => match[1]);
   assert.equal(resources.length, 9);
-  assert.ok(resources.every(resource => resource.endsWith('?v=batches-9')));
+  assert.ok(resources.every(resource => resource.endsWith('?v=batch-keys-10')));
   assert.match(fs.readFileSync(path.join(base, 'styles.css'), 'utf8'), /font: 400 12px\/1\.6 var\(--ds-font\)/);
 });
 
@@ -552,4 +552,36 @@ test('levas: mantém acertos até completar três linhas e cancela avanço ao re
   flushTimers();
   assert.equal(el['batch-label'].textContent, 'Leva 1 de 4');
   assert.equal(el['progress-gauge'].attributes['aria-valuenow'], '0');
+});
+
+
+test('setas horizontais navegam levas com campo focado, respeitam limites e modificadores', () => {
+  const { elements: el, document } = appFixture();
+  const input = el['country-input'];
+  const press = (key, options = {}) => {
+    let prevented = false;
+    document.events.keydown({ key, target: input, preventDefault() { prevented = true; }, ...options });
+    return prevented;
+  };
+  assert.equal(press('ArrowRight'), false);
+  el['game-modes'].children[1].events.click();
+  input.value = 'rascunho';
+  assert.equal(press('ArrowLeft'), true);
+  assert.equal(el['batch-label'].textContent, 'Leva 1 de 4');
+  assert.equal(press('ArrowRight'), true);
+  assert.equal(el['batch-label'].textContent, 'Leva 2 de 4');
+  assert.equal(input.value, 'rascunho');
+  assert.equal(document.activeElement, input);
+  for (const options of [{ repeat: true }, { ctrlKey: true }, { metaKey: true }, { altKey: true }, { shiftKey: true }, { isComposing: true }]) {
+    press('ArrowRight', options);
+    assert.equal(el['batch-label'].textContent, 'Leva 2 de 4');
+  }
+  press('ArrowLeft');
+  assert.equal(el['batch-label'].textContent, 'Leva 1 de 4');
+  for (let i = 0; i < 5; i++) press('ArrowRight');
+  assert.equal(el['batch-label'].textContent, 'Leva 4 de 4');
+  el['reveal-button'].events.click();
+  press('ArrowLeft');
+  assert.equal(el['batch-label'].textContent, 'Leva 3 de 4');
+  assert.equal(el['progress-gauge'].attributes['aria-valuenow'], '54');
 });

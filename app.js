@@ -56,8 +56,16 @@
       showBatch();
     }, 1000);
   }
-  batchPrevious.addEventListener('click', () => { batch--; showBatch(); });
-  batchNext.addEventListener('click', () => { batch++; showBatch(); scheduleBatchAdvance(); });
+  function moveBatch(direction) {
+    if (mode.id === 'random') return;
+    const target = batch + direction;
+    if (target < 0 || target >= Math.ceil(countries.length / batchSize())) return;
+    batch = target;
+    showBatch();
+    if (direction > 0) scheduleBatchAdvance();
+  }
+  batchPrevious.addEventListener('click', () => moveBatch(-1));
+  batchNext.addEventListener('click', () => moveBatch(1));
   compactGrid?.addEventListener('change', () => {
     batch = Math.floor(Math.max(0, countries.findIndex(item => !item.solved)) / batchSize());
     showBatch();
@@ -169,6 +177,11 @@
       if (shortcutKey === '1' && input.disabled) return;
       event.preventDefault();
       if (!event.repeat) shortcut();
+      return;
+    }
+    if ((event.key === 'ArrowLeft' || event.key === 'ArrowRight') && !event.shiftKey && mode.id !== 'random') {
+      event.preventDefault();
+      if (!event.repeat) moveBatch(event.key === 'ArrowRight' ? 1 : -1);
       return;
     }
     if ((event.key === 'ArrowUp' || event.key === 'ArrowDown') && !event.shiftKey) {

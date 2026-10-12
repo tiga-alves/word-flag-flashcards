@@ -4,15 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>5 bandeiras aleatórias</title>
-  <link rel="stylesheet" href="design-system.css?v=batches-9">
-  <link rel="stylesheet" href="styles.css?v=batches-9">
-  <script defer src="countries.js?v=batches-9"></script>
-  <script defer src="game.js?v=batches-9"></script>
-  <script defer src="modes.js?v=batches-9"></script>
-  <script defer src="audio.js?v=batches-9"></script>
-  <script defer src="app.js?v=batches-9"></script>
-  <script defer src="globe-data.js?v=batches-9"></script>
-  <script defer src="globe.js?v=batches-9"></script>
+  <link rel="stylesheet" href="design-system.css?v=batch-keys-10">
+  <link rel="stylesheet" href="styles.css?v=batch-keys-10">
+  <script defer src="countries.js?v=batch-keys-10"></script>
+  <script defer src="game.js?v=batch-keys-10"></script>
+  <script defer src="modes.js?v=batch-keys-10"></script>
+  <script defer src="audio.js?v=batch-keys-10"></script>
+  <script defer src="app.js?v=batch-keys-10"></script>
+  <script defer src="globe-data.js?v=batch-keys-10"></script>
+  <script defer src="globe.js?v=batch-keys-10"></script>
 </head>
 <body>
   <canvas id="world-background" aria-hidden="true"></canvas>
@@ -41,9 +41,9 @@
           <form id="game-form" autocomplete="off">
             <div class="flags-grid" id="flags-grid"></div>
             <div id="batch-controls" class="batch-controls" hidden>
-              <button id="batch-previous" type="button" class="reveal-button" aria-label="Leva anterior">←</button>
+              <button id="batch-previous" type="button" class="reveal-button" aria-label="Leva anterior, seta para a esquerda" aria-keyshortcuts="ArrowLeft" title="Leva anterior (←)">←</button>
               <span id="batch-label" role="status" aria-live="polite"></span>
-              <button id="batch-next" type="button" class="reveal-button" aria-label="Próxima leva">→</button>
+              <button id="batch-next" type="button" class="reveal-button" aria-label="Próxima leva, seta para a direita" aria-keyshortcuts="ArrowRight" title="Próxima leva (→)">→</button>
             </div>
             <div class="typing-area">
               <label class="sr-only" for="country-input">Digite o nome de qualquer país das bandeiras</label>

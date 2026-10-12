@@ -52,3 +52,5 @@ rever respostas, inclusive após revelar todas. O progresso considera a rodada
 inteira; o modo de cinco bandeiras permanece igual. Nomes ambíguos, como Guiné e Sudão,
 podem ser confirmados com Enter quando outro nome ainda começa pelo mesmo texto;
 os demais acertos continuam instantâneos.
+
+Use **←** e **→** para navegar entre as levas, inclusive com o campo focado ou após concluir a rodada. Os atalhos preservam o texto digitado e param nos limites; no modo de cinco bandeiras, as setas mantêm a edição normal do texto.
