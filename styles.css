@@ -16,14 +16,14 @@ h2 span { color:#222; font-size:18px; margin-right:8px; vertical-align:middle; }
 .corner-icon { display:grid; place-items:center; border:1px solid #e6e6e6; border-radius:7px; width:30px; height:30px; font-size:15px; }
 .progress-panel { display:grid; place-items:center; min-height:284px; }
 .gauge { contain:layout paint; transform:translateZ(0); position:relative; width:240px; max-width:100%; aspect-ratio:1; margin:0 auto; }
-.gauge-value { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:3px; font-variant-numeric:tabular-nums; pointer-events:none; }
+.gauge-value { color:#6544ae; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:3px; font-variant-numeric:tabular-nums; pointer-events:none; }
 .gauge-count { position:relative; display:block; overflow:hidden; width:1ch; height:1.25em; font-size:38px; font-weight:550; line-height:1.25; }
 .counter-digit { will-change:transform,opacity; backface-visibility:hidden; position:absolute; inset:0; display:block; text-align:center; }
-.gauge-total { color:#92929a; font-size:25px; font-weight:400; }
+.gauge-total { color:#8061ca; font-size:25px; font-weight:400; }
 .gauge svg { display:block; width:100%; height:100%; overflow:visible; }
 .gauge-track,.gauge-fill { fill:none; stroke-width:18; stroke-linecap:round; }
-.gauge-track { stroke:#e6e6e8; }
-.gauge-fill { stroke:#303034; stroke-dasharray:1; stroke-dashoffset:1; opacity:0; transition:stroke-dashoffset 360ms cubic-bezier(.22,1,.36,1),opacity 120ms ease; }
+.gauge-track { stroke:#e5dcf5; }
+.gauge-fill { stroke:#6544ae; stroke-dasharray:1; stroke-dashoffset:1; opacity:0; transition:stroke-dashoffset 360ms cubic-bezier(.22,1,.36,1),opacity 120ms ease; }
 .gauge-segment.complete .gauge-fill { stroke-dashoffset:0; opacity:1; }
 .badge { display:inline-block; border-radius:4px; background:#edf8ec; color:#208637; padding:4px 7px; font-size:10px; font-weight:500; white-space:nowrap; }
 .game-panel { padding:22px 24px; }

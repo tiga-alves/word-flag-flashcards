@@ -470,7 +470,7 @@ test('recursos CSS e JS usam a mesma versão para evitar mistura de cache', () =
   const html = fs.readFileSync(path.join(base, 'index.html'), 'utf8');
   const resources = [...html.matchAll(/(?:src|href)="([^" ]+\.(?:css|js)(?:\?[^" ]*)?)"/g)].map(match => match[1]);
   assert.equal(resources.length, 9);
-  assert.ok(resources.every(resource => resource.endsWith('?v=controls-5')));
+  assert.ok(resources.every(resource => resource.endsWith('?v=controls-6')));
   assert.match(fs.readFileSync(path.join(base, 'styles.css'), 'utf8'), /font: 400 12px\/1\.6 var\(--ds-font\)/);
 });
 
