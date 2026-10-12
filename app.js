@@ -23,14 +23,9 @@
   const batchPrevious = document.getElementById('batch-previous');
   const batchNext = document.getElementById('batch-next');
   const compactGrid = window.matchMedia?.('(max-width: 480px)');
-  let batch = 0, batchTimer;
+  let batch = 0;
   const batchSize = () => compactGrid?.matches ? 9 : 15;
-  function cancelBatchAdvance() {
-    window.clearTimeout?.(batchTimer);
-    batchTimer = undefined;
-  }
   function showBatch() {
-    cancelBatchAdvance();
     const collection = mode.id !== 'random';
     const size = batchSize();
     const total = Math.ceil(countries.length / size);
@@ -44,25 +39,22 @@
     batchPrevious.disabled = batch === 0;
     batchNext.disabled = batch === total - 1;
   }
-  function scheduleBatchAdvance() {
+  function advanceCompletedBatch() {
     if (mode.id === 'random' || countries.every(item => item.solved)) return;
     const size = batchSize();
     if (!countries.slice(batch * size, (batch + 1) * size).every(item => item.solved)) return;
-    cancelBatchAdvance();
-    batchTimer = window.setTimeout(() => {
-      const pending = countries.findIndex(item => !item.solved);
-      if (pending < 0) return;
-      batch = Math.floor(pending / batchSize());
-      showBatch();
-    }, 1000);
+    const pending = countries.findIndex(item => !item.solved);
+    if (pending < 0) return;
+    batch = Math.floor(pending / size);
+    showBatch();
   }
+
   function moveBatch(direction) {
     if (mode.id === 'random') return;
     const target = batch + direction;
     if (target < 0 || target >= Math.ceil(countries.length / batchSize())) return;
     batch = target;
     showBatch();
-    if (direction > 0) scheduleBatchAdvance();
   }
   batchPrevious.addEventListener('click', () => moveBatch(-1));
   batchNext.addEventListener('click', () => moveBatch(1));
@@ -127,9 +119,8 @@
     counter.textContent = `${solved} de ${countries.length} países completos`;
     status.textContent = '';
     if (!revealed) window.FlagAudio?.success();
-    scheduleBatchAdvance();
+    advanceCompletedBatch();
     if (solved === countries.length) {
-      cancelBatchAdvance();
       const revealedCount = countries.filter(country => country.revealed).length;
       const correctCount = countries.length - revealedCount;
       status.textContent = `Rodada concluída! Acertos: ${correctCount} · Respostas reveladas: ${revealedCount}.`;
@@ -218,7 +209,6 @@
     return shuffleEnabled ? FlagGame.sample(list, list.length) : [...list].sort((a, b) => nameOf(a).localeCompare(nameOf(b), 'pt-BR'));
   }
   function renderRound(round) {
-    cancelBatchAdvance();
     batch = 0;
     round = ordered(round, country => country.name);
     title.textContent = mode.name;
@@ -278,7 +268,6 @@
     shuffleEnabled = !shuffleEnabled;
     shuffleButton.setAttribute('aria-pressed', String(shuffleEnabled));
     document.getElementById('shuffle-label').textContent = `Shuffle: ${shuffleEnabled ? 'ligado' : 'desligado'}`;
-    cancelBatchAdvance();
     countries = ordered(countries, item => item.country.name);
     batch = Math.floor(Math.max(0, countries.findIndex(item => !item.solved)) / batchSize());
     grid.replaceChildren(...countries.map(item => item.card));

@@ -86,14 +86,12 @@ class Element {
   get isConnected() { return this.parent !== null; }
 }
 function appFixture() {
-  const timers = new Map();
-  let timerId = 0;
   const elements = {};
   const document = { events: {}, addEventListener(type, callback) { this.events[type] = callback; }, getElementById: id => elements[id], createElement: tag => new Element(tag, document), createElementNS: (namespace, tag) => new Element(tag, document) };
   for (const [id, tag] of Object.entries({ 'batch-controls': 'div', 'batch-label': 'span', 'batch-previous': 'button', 'batch-next': 'button', 'shuffle-label': 'span', 'shuffle-button': 'button', 'restart-round': 'button', 'reveal-button': 'button', 'game-modes': 'div', 'game-title': 'h1', 'answer-hint': 'p', 'flags-grid': 'div', 'game-form': 'form', 'country-input': 'input', 'gauge-count': 'span', 'gauge-total': 'span', 'new-round': 'button', 'round-status': 'div', 'filled-count': 'p', 'progress-gauge': 'div', 'progress-segments': 'svg' })) elements[id] = new Element(tag, document);
   const deterministicGame = { normalize, grade, sample: (list, count = 5) => sample(list, count, () => 0.9999) };
-  vm.runInNewContext(fs.readFileSync(path.join(base, 'app.js'), 'utf8'), { document, window: { setTimeout(fn) { timers.set(++timerId, fn); return timerId; }, clearTimeout(id) { timers.delete(id); } }, FlagModes: modes, FlagCountries: countries, FlagGame: deterministicGame });
-  return { elements, document, flushTimers() { const callbacks = [...timers.values()]; timers.clear(); callbacks.forEach(fn => fn()); } };
+  vm.runInNewContext(fs.readFileSync(path.join(base, 'app.js'), 'utf8'), { document, window: {}, FlagModes: modes, FlagCountries: countries, FlagGame: deterministicGame });
+  return { elements, document };
 }
 
 test('app: digitação livre, edição e nomes corretos em qualquer ordem', () => {
@@ -472,7 +470,7 @@ test('recursos CSS e JS usam a mesma versão para evitar mistura de cache', () =
   const html = fs.readFileSync(path.join(base, 'index.html'), 'utf8');
   const resources = [...html.matchAll(/(?:src|href)="([^" ]+\.(?:css|js)(?:\?[^" ]*)?)"/g)].map(match => match[1]);
   assert.equal(resources.length, 9);
-  assert.ok(resources.every(resource => resource.endsWith('?v=batch-keys-10')));
+  assert.ok(resources.every(resource => resource.endsWith('?v=instant-batches-11')));
   assert.match(fs.readFileSync(path.join(base, 'styles.css'), 'utf8'), /font: 400 12px\/1\.6 var\(--ds-font\)/);
 });
 
@@ -527,8 +525,8 @@ test('setas percorrem os oito modos, preservam shuffle e respeitam limites', () 
 });
 
 
-test('levas: mantém acertos até completar três linhas e cancela avanço ao reiniciar', () => {
-  const { elements: el, flushTimers } = appFixture();
+test('levas: avança imediatamente ao completar três linhas e reinicia na primeira', () => {
+  const { elements: el } = appFixture();
   el['game-modes'].children[1].events.click();
   const visible = () => el['flags-grid'].children.filter(card => !card.hidden);
   const first = visible();
@@ -539,17 +537,13 @@ test('levas: mantém acertos até completar três linhas e cancela avanço ao re
     el['game-form'].events.submit({ preventDefault() {} });
   }
   first.slice(0, 14).forEach(answer);
-  flushTimers();
   assert.deepEqual(visible(), first);
   answer(first[14]);
-  assert.deepEqual(visible(), first);
-  flushTimers();
   assert.equal(el['batch-label'].textContent, 'Leva 2 de 4');
   assert.ok(visible().every(card => !first.includes(card)));
   assert.equal(el['progress-gauge'].attributes['aria-valuenow'], '15');
   visible().forEach(answer);
   el['restart-round'].events.click();
-  flushTimers();
   assert.equal(el['batch-label'].textContent, 'Leva 1 de 4');
   assert.equal(el['progress-gauge'].attributes['aria-valuenow'], '0');
 });
