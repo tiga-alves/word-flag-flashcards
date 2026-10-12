@@ -116,9 +116,10 @@
   input.addEventListener('compositionend', () => onInput({ isComposing: false }));
   document.addEventListener('keydown', event => {
     if (event.ctrlKey || event.metaKey || event.altKey || event.isComposing) return;
-    const shortcut = { '1': revealAll, '2': toggleShuffle, '3': restartRound }[event.key];
+    const shortcutKey = /^[123]$/.test(event.key) ? event.key : /^(?:Digit|Numpad)([123])$/.exec(event.code ?? '')?.[1];
+    const shortcut = { '1': revealAll, '2': toggleShuffle, '3': restartRound }[shortcutKey];
     if (shortcut && !event.shiftKey) {
-      if (event.key === '1' && input.disabled) return;
+      if (shortcutKey === '1' && input.disabled) return;
       event.preventDefault();
       if (!event.repeat) shortcut();
       return;

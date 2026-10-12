@@ -125,8 +125,10 @@ h2 { font-size:11px; font-weight:550; letter-spacing:.025em; }
 .revealed .feedback { letter-spacing: normal; color: #765119; }
 .revealed { box-shadow: inset 0 0 0 1px #b58b44; }
 
-.reveal-button { background: transparent; color: inherit; border: 1px solid #b0a9b7; border-radius: 5px; padding: 4px 8px; font: inherit; cursor: pointer; }
+.reveal-button { background: transparent; color: inherit; border: 1px solid #b0a9b7; border-radius: 5px; padding: 4px 8px; font: 400 12px/1.6 var(--ds-font); cursor: pointer; }
 .reveal-button:focus-visible { outline: 2px solid #765119; outline-offset: 3px; }
 .reveal-button:disabled { opacity: .5; cursor: default; }
 
 #shuffle-button[aria-pressed="true"] { border-color: #765119; color: #765119; }
+
+.reveal-button kbd { font: inherit; }

@@ -184,7 +184,7 @@ test('página usa recursos locais e scripts clássicos compatíveis com file://'
   const html = fs.readFileSync(path.join(base, 'index.html'), 'utf8');
   assert.match(html, /lang="pt-BR"/);
   assert.doesNotMatch(html, /(?:src|href)="(?:https?:|\/\/)|type="module"/);
-  for (const match of html.matchAll(/(?:src|href)="([^"]+)"/g)) assert.ok(fs.existsSync(path.join(base, match[1])));
+  for (const match of html.matchAll(/(?:src|href)="([^"]+)"/g)) assert.ok(fs.existsSync(path.join(base, match[1].split('?')[0])));
   for (const file of ['app.js', 'audio.js', 'game.js', 'countries.js']) {
     const source = fs.readFileSync(path.join(base, file), 'utf8');
     assert.doesNotMatch(source, /\bfetch\(|XMLHttpRequest|\bimport\s/);
@@ -434,4 +434,42 @@ test('atalhos 2 e 3 funcionam com campo focado e rodada concluída sem inserir n
   const html = fs.readFileSync(path.join(base, 'index.html'), 'utf8');
   assert.match(html, /aria-keyshortcuts="2"/);
   assert.match(html, /aria-keyshortcuts="3"/);
+});
+
+
+test('atalhos reconhecem códigos físicos Digit e Numpad mesmo sem event.key numérico', () => {
+  for (const prefix of ['Digit', 'Numpad']) {
+    const { elements: el, document } = appFixture();
+    const input = el['country-input'];
+    const press = (digit, options = {}) => {
+      let prevented = false;
+      document.events.keydown({ key: prefix === 'Numpad' ? 'End' : 'Unidentified', code: `${prefix}${digit}`, target: input, preventDefault() { prevented = true; }, ...options });
+      return prevented;
+    };
+    input.value = 'rascunho';
+    assert.equal(press('2', { ctrlKey: true }), false);
+    assert.equal(press('2', { isComposing: true }), false);
+    assert.equal(press('2', { repeat: true }), true);
+    assert.equal(input.value, 'rascunho');
+    assert.equal(press('2'), true);
+    assert.equal(el['shuffle-button'].attributes['aria-pressed'], 'false');
+    assert.equal(input.value, 'rascunho');
+    assert.equal(press('1'), true);
+    assert.equal(input.disabled, true);
+    assert.equal(el['flags-grid'].querySelectorAll('.revealed').length, 5);
+    assert.equal(press('2'), true);
+    assert.equal(el['shuffle-button'].attributes['aria-pressed'], 'true');
+    assert.equal(press('3'), true);
+    assert.equal(input.disabled, false);
+    assert.equal(input.value, '');
+    assert.equal(el['progress-gauge'].attributes['aria-valuenow'], '0');
+  }
+});
+
+test('recursos CSS e JS usam a mesma versão para evitar mistura de cache', () => {
+  const html = fs.readFileSync(path.join(base, 'index.html'), 'utf8');
+  const resources = [...html.matchAll(/(?:src|href)="([^" ]+\.(?:css|js)(?:\?[^" ]*)?)"/g)].map(match => match[1]);
+  assert.equal(resources.length, 9);
+  assert.ok(resources.every(resource => resource.endsWith('?v=controls-4')));
+  assert.match(fs.readFileSync(path.join(base, 'styles.css'), 'utf8'), /font: 400 12px\/1\.6 var\(--ds-font\)/);
 });
