@@ -71,10 +71,12 @@
     if (!refresh) return;
     updateDashboard();
     const solved = countries.filter(country => country.solved).length;
-    counter.textContent = `${solved} de ${countries.length} países completos`;
+    counter.textContent = (mode.id === 'random' ? '' : `${item.country.name}. `) + `${solved} de ${countries.length} países completos`;
     status.textContent = '';
     if (!revealed) window.FlagAudio?.success();
     if (solved === countries.length) {
+      grid.classList.add('flags-grid--review');
+      grid.scrollLeft = 0;
       const revealedCount = countries.filter(country => country.revealed).length;
       const correctCount = countries.length - revealedCount;
       status.textContent = `Rodada concluída! Acertos: ${correctCount} · Respostas reveladas: ${revealedCount}.`;
@@ -163,6 +165,9 @@
     document.title = mode.name;
     modeButtons.forEach(({ button, option }) => button.setAttribute('aria-pressed', String(option === mode)));
     grid.classList.toggle('flags-grid--collection', mode.id !== 'random');
+    grid.classList.toggle('flags-grid--review', false);
+    grid.tabIndex = mode.id === 'random' ? -1 : 0;
+    grid.scrollLeft = 0;
     grid.scrollTop = 0;
     answerHint.hidden = true;
     countries = []; previous = ''; displayedScore = 0;
@@ -217,6 +222,7 @@
     document.getElementById('shuffle-label').textContent = `Shuffle: ${shuffleEnabled ? 'ligado' : 'desligado'}`;
     countries = ordered(countries, item => item.country.name);
     grid.replaceChildren(...countries.map(item => item.card));
+    grid.scrollLeft = 0;
     countries.forEach((item, index) => {
       item.card.style.setProperty('--card-index', index);
       item.image.alt = `Bandeira ${index + 1} da rodada`;
