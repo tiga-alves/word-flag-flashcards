@@ -4,15 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>5 bandeiras aleatórias</title>
-  <link rel="stylesheet" href="design-system.css?v=controls-4">
-  <link rel="stylesheet" href="styles.css?v=controls-4">
-  <script defer src="countries.js?v=controls-4"></script>
-  <script defer src="game.js?v=controls-4"></script>
-  <script defer src="modes.js?v=controls-4"></script>
-  <script defer src="audio.js?v=controls-4"></script>
-  <script defer src="app.js?v=controls-4"></script>
-  <script defer src="globe-data.js?v=controls-4"></script>
-  <script defer src="globe.js?v=controls-4"></script>
+  <link rel="stylesheet" href="design-system.css?v=controls-5">
+  <link rel="stylesheet" href="styles.css?v=controls-5">
+  <script defer src="countries.js?v=controls-5"></script>
+  <script defer src="game.js?v=controls-5"></script>
+  <script defer src="modes.js?v=controls-5"></script>
+  <script defer src="audio.js?v=controls-5"></script>
+  <script defer src="app.js?v=controls-5"></script>
+  <script defer src="globe-data.js?v=controls-5"></script>
+  <script defer src="globe.js?v=controls-5"></script>
 </head>
 <body>
   <canvas id="world-background" aria-hidden="true"></canvas>
@@ -22,7 +22,8 @@
     </header>
     <div class="dashboard">
       <aside class="sidebar">
-        <nav class="panel mode-panel" aria-label="Tipo de jogo">
+        <nav class="panel mode-panel" aria-label="Tipo de jogo" aria-keyshortcuts="ArrowUp ArrowDown" aria-describedby="mode-shortcuts">
+          <p id="mode-shortcuts" class="sr-only">Use seta para cima ou seta para baixo para mudar o modo de jogo na ordem do menu. Mudar o modo inicia uma nova rodada.</p>
           <p class="mode-heading">Escolha seu desafio</p>
           <div id="game-modes" class="game-modes"></div>
         </nav>

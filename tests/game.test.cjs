@@ -443,7 +443,7 @@ test('atalhos reconhecem códigos físicos Digit e Numpad mesmo sem event.key nu
     const input = el['country-input'];
     const press = (digit, options = {}) => {
       let prevented = false;
-      document.events.keydown({ key: prefix === 'Numpad' ? 'End' : 'Unidentified', code: `${prefix}${digit}`, target: input, preventDefault() { prevented = true; }, ...options });
+      document.events.keydown({ key: prefix === 'Numpad' ? { '1': 'End', '2': 'ArrowDown', '3': 'PageDown' }[digit] : 'Unidentified', code: `${prefix}${digit}`, target: input, preventDefault() { prevented = true; }, ...options });
       return prevented;
     };
     input.value = 'rascunho';
@@ -470,6 +470,56 @@ test('recursos CSS e JS usam a mesma versão para evitar mistura de cache', () =
   const html = fs.readFileSync(path.join(base, 'index.html'), 'utf8');
   const resources = [...html.matchAll(/(?:src|href)="([^" ]+\.(?:css|js)(?:\?[^" ]*)?)"/g)].map(match => match[1]);
   assert.equal(resources.length, 9);
-  assert.ok(resources.every(resource => resource.endsWith('?v=controls-4')));
+  assert.ok(resources.every(resource => resource.endsWith('?v=controls-5')));
   assert.match(fs.readFileSync(path.join(base, 'styles.css'), 'utf8'), /font: 400 12px\/1\.6 var\(--ds-font\)/);
+});
+
+
+test('setas percorrem os oito modos, preservam shuffle e respeitam limites', () => {
+  const { elements: el, document } = appFixture();
+  const input = el['country-input'];
+  const press = (key, options = {}) => {
+    let prevented = false;
+    document.events.keydown({ key, target: input, preventDefault() { prevented = true; }, ...options });
+    return prevented;
+  };
+  input.value = countries[0].name; input.events.input({});
+  const firstCards = [...el['flags-grid'].children];
+  assert.equal(press('ArrowUp'), true);
+  assert.deepEqual(el['flags-grid'].children, firstCards);
+  assert.equal(el['progress-gauge'].attributes['aria-valuenow'], '1');
+  for (const options of [{ ctrlKey: true }, { metaKey: true }, { altKey: true }, { shiftKey: true }, { isComposing: true }]) assert.equal(press('ArrowDown', options), false);
+  assert.equal(press('ArrowDown', { repeat: true }), true);
+  assert.equal(el['game-title'].textContent, modes[0].name);
+  el['shuffle-button'].events.click();
+  for (let index = 1; index < modes.length; index++) {
+    input.value = 'rascunho';
+    assert.equal(press('ArrowDown'), true);
+    assert.equal(el['game-title'].textContent, modes[index].name);
+    assert.equal(el['flags-grid'].children.length, modes[index].count);
+    assert.equal(el['game-modes'].children[index].attributes['aria-pressed'], 'true');
+    assert.equal(el['shuffle-button'].attributes['aria-pressed'], 'false');
+    assert.equal(el['progress-gauge'].attributes['aria-valuenow'], '0');
+    assert.equal(input.value, '');
+    assert.equal(document.activeElement, input);
+    const pool = modes[index].codes ? countries.filter(country => modes[index].codes.includes(country.code)) : countries;
+    assert.deepEqual(el['flags-grid'].querySelectorAll('img').map(image => image.src), [...pool].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR')).map(country => country.flag));
+  }
+  el['reveal-button'].events.click();
+  assert.equal(input.disabled, true);
+  const finalCards = [...el['flags-grid'].children];
+  assert.equal(press('ArrowDown'), true);
+  assert.deepEqual(el['flags-grid'].children, finalCards);
+  assert.equal(input.disabled, true);
+  for (let index = modes.length - 2; index >= 0; index--) {
+    assert.equal(press('ArrowUp'), true);
+    assert.equal(el['game-title'].textContent, modes[index].name);
+    assert.equal(input.disabled, false);
+    assert.equal(el['progress-gauge'].attributes['aria-valuenow'], '0');
+    assert.equal(el['shuffle-button'].attributes['aria-pressed'], 'false');
+  }
+  const cards = [...el['flags-grid'].children];
+  el['game-modes'].children[0].events.click();
+  assert.deepEqual(el['flags-grid'].children, cards);
+  assert.match(fs.readFileSync(path.join(base, 'index.html'), 'utf8'), /aria-keyshortcuts="ArrowUp ArrowDown"/);
 });

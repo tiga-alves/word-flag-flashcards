@@ -124,6 +124,14 @@
       if (!event.repeat) shortcut();
       return;
     }
+    if ((event.key === 'ArrowUp' || event.key === 'ArrowDown') && !event.shiftKey) {
+      event.preventDefault();
+      if (!event.repeat) {
+        const index = FlagModes.indexOf(mode) + (event.key === 'ArrowDown' ? 1 : -1);
+        if (index >= 0 && index < FlagModes.length) selectMode(FlagModes[index]);
+      }
+      return;
+    }
     if (input.disabled) return;
     if (event.target.closest('input, textarea, select, [contenteditable="true"]')) return;
     if (!(event.key.length === 1 && /[\p{L} -]/u.test(event.key)) && event.key !== 'Backspace') return;
@@ -189,13 +197,18 @@
     event.preventDefault();
     onInput({ isComposing: false, confirm: true });
   });
+  function selectMode(option) {
+    if (mode === option) return;
+    mode = option;
+    startRound();
+  }
   for (const option of FlagModes) {
     const button = document.createElement('button');
     button.type = 'button'; button.className = 'mode-button';
     const label = document.createElement('span'); label.textContent = option.name;
     const count = document.createElement('span'); count.className = 'mode-count'; count.textContent = String(option.count);
     button.append(label, count);
-    button.addEventListener('click', () => { if (mode !== option) { mode = option; startRound(); } });
+    button.addEventListener('click', () => selectMode(option));
     modeButtons.push({ button, option }); menu.append(button);
   }
   function toggleShuffle() {

@@ -40,6 +40,8 @@ Com Node.js disponível, execute `node --test tests/*.test.cjs` para verificar c
 
 O fundo prioriza WebGL e possui um modo Canvas adaptativo para ambientes sem aceleração. A geometria pré-calculada fica em `globe-data.js`; mantenha esse arquivo junto aos demais arquivos do jogo. Para regenerá-la, execute `node scripts/build-globe-data.cjs`.
 
+Use **↑** e **↓** para mudar o modo de jogo na ordem do menu, inclusive com o campo de resposta focado ou após concluir a rodada. As setas param no primeiro e no último modo, sem reiniciar nesses limites. Mudar de modo inicia uma nova rodada e mantém a preferência de shuffle.
+
 Modos de jogo: o menu lateral oferece 5 bandeiras aleatórias, África, Ásia,
 Europa, América do Norte (incluindo América Central e Caribe), América do Sul,
 Oceania e todas as 195 bandeiras. Cada continente inclui todos os países da
