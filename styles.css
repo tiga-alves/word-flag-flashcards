@@ -117,8 +117,8 @@ h2 { font-size:11px; font-weight:550; letter-spacing:.025em; }
   .flags-grid--collection { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
-.shortcut-hint { margin: 8px 0; text-align: center; color: #767080; font-size: 12px; line-height: 1.6; }
-.shortcut-hint kbd { border: 1px solid currentColor; border-radius: 4px; padding: 1px 5px; font: inherit; }
+.game-controls { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 8px 0; color: #767080; font-size: 12px; line-height: 1.6; }
+.game-controls kbd { border: 1px solid currentColor; border-radius: 4px; padding: 1px 5px; font: inherit; }
 .feedback-note { margin: 3px 0 0; font-size: 10px; line-height: 1.5; color: #767080; }
 .feedback-note:empty { display: none; }
 .correct .feedback { letter-spacing: normal; color: var(--ds-success-700); }
@@ -128,3 +128,5 @@ h2 { font-size:11px; font-weight:550; letter-spacing:.025em; }
 .reveal-button { background: transparent; color: inherit; border: 1px solid #b0a9b7; border-radius: 5px; padding: 4px 8px; font: inherit; cursor: pointer; }
 .reveal-button:focus-visible { outline: 2px solid #765119; outline-offset: 3px; }
 .reveal-button:disabled { opacity: .5; cursor: default; }
+
+#shuffle-button[aria-pressed="true"] { border-color: #765119; color: #765119; }

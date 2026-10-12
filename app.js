@@ -13,6 +13,8 @@
   const menu = document.getElementById('game-modes');
   const title = document.getElementById('game-title');
   const answerHint = document.getElementById('answer-hint');
+  const shuffleButton = document.getElementById('shuffle-button');
+  let shuffleEnabled = true;
   let mode = FlagModes[0];
   const modeButtons = [];
   let countries = [], previous = '', displayedScore = 0;
@@ -138,6 +140,13 @@
       round.push(country);
       if (mode.id === 'random' && round.length === 5) break;
     }
+    renderRound(round);
+  }
+  function ordered(list, nameOf) {
+    return shuffleEnabled ? FlagGame.sample(list, list.length) : [...list].sort((a, b) => nameOf(a).localeCompare(nameOf(b), 'pt-BR'));
+  }
+  function renderRound(round) {
+    round = ordered(round, country => country.name);
     title.textContent = mode.name;
     document.title = mode.name;
     modeButtons.forEach(({ button, option }) => button.setAttribute('aria-pressed', String(option === mode)));
@@ -166,7 +175,7 @@
       const feedback = document.createElement('p'); feedback.className = 'feedback'; feedback.textContent = '…';
       const note = document.createElement('p'); note.className = 'feedback-note';
       card.append(stage, feedback, note); grid.append(card);
-      countries.push({ country, card, feedback, note, solved: false, revealed: false, keys: [...new Set(country.answers.map(keyOf))] });
+      countries.push({ country, card, image, feedback, note, solved: false, revealed: false, keys: [...new Set(country.answers.map(keyOf))] });
     });
     createProgressSegments();
     updateDashboard();
@@ -185,6 +194,21 @@
     button.addEventListener('click', () => { if (mode !== option) { mode = option; startRound(); } });
     modeButtons.push({ button, option }); menu.append(button);
   }
+  shuffleButton.addEventListener('click', () => {
+    shuffleEnabled = !shuffleEnabled;
+    shuffleButton.setAttribute('aria-pressed', String(shuffleEnabled));
+    shuffleButton.textContent = `Shuffle: ${shuffleEnabled ? 'ligado' : 'desligado'}`;
+    countries = ordered(countries, item => item.country.name);
+    grid.replaceChildren(...countries.map(item => item.card));
+    countries.forEach((item, index) => {
+      item.card.style.setProperty('--card-index', index);
+      item.image.alt = `Bandeira ${index + 1} da rodada`;
+      item.image.loading = index < 15 ? 'eager' : 'lazy';
+    });
+    createProgressSegments();
+    updateDashboard();
+  });
+  document.getElementById('restart-round').addEventListener('click', () => renderRound(countries.map(item => item.country)));
   next.addEventListener('click', startRound);
   startRound();
 })();

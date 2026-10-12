@@ -10,6 +10,10 @@ Digite o nome de qualquer país das cinco bandeiras. A área de resposta mostra 
 
 Pressione **1**, mesmo com o campo de resposta focado, ou clique em **1 Revelar todas** para mostrar de uma vez os nomes completos de todas as bandeiras ainda pendentes. Os acertos já realizados são preservados; as demais respostas ficam marcadas como reveladas e a rodada termina.
 
+O botão **Shuffle** começa ligado e alterna entre ordem embaralhada e ordem alfabética em português. Trocar essa opção reorganiza as bandeiras atuais e preserva os acertos, as respostas reveladas e o progresso. Com shuffle desligado, a rodada de cinco bandeiras continua escolhendo cinco países aleatórios, exibidos em ordem alfabética.
+
+**Reiniciar** fica sempre disponível e zera a rodada com os mesmos países, respeitando a opção de shuffle, sem recarregar a página. **Nova rodada** inicia uma nova seleção; nos modos de continente e mundo, mantém o conjunto completo do modo.
+
 O progresso acompanha os países completos, incluindo respostas reveladas. Na rodada aleatória, tem cinco segmentos preenchidos no sentido horário e um contador de 0/5 até 5/5. Ao completar a rodada, o resumo separa os acertos e as respostas reveladas. Clique em **Nova rodada** para jogar novamente.
 
 O globo roxo de pontos gira ao fundo com brilhos individuais. A preferência por movimento reduzido diminui a velocidade, sem desligar a animação solicitada; abas ocultas pausam a renderização. Sons e todos os recursos funcionam offline.

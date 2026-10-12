@@ -88,7 +88,7 @@ class Element {
 function appFixture() {
   const elements = {};
   const document = { events: {}, addEventListener(type, callback) { this.events[type] = callback; }, getElementById: id => elements[id], createElement: tag => new Element(tag, document), createElementNS: (namespace, tag) => new Element(tag, document) };
-  for (const [id, tag] of Object.entries({ 'reveal-button': 'button', 'game-modes': 'div', 'game-title': 'h1', 'answer-hint': 'p', 'flags-grid': 'div', 'game-form': 'form', 'country-input': 'input', 'gauge-count': 'span', 'gauge-total': 'span', 'new-round': 'button', 'round-status': 'div', 'filled-count': 'p', 'progress-gauge': 'div', 'progress-segments': 'svg' })) elements[id] = new Element(tag, document);
+  for (const [id, tag] of Object.entries({ 'shuffle-button': 'button', 'restart-round': 'button', 'reveal-button': 'button', 'game-modes': 'div', 'game-title': 'h1', 'answer-hint': 'p', 'flags-grid': 'div', 'game-form': 'form', 'country-input': 'input', 'gauge-count': 'span', 'gauge-total': 'span', 'new-round': 'button', 'round-status': 'div', 'filled-count': 'p', 'progress-gauge': 'div', 'progress-segments': 'svg' })) elements[id] = new Element(tag, document);
   const deterministicGame = { normalize, grade, sample: (list, count = 5) => sample(list, count, () => 0.9999) };
   vm.runInNewContext(fs.readFileSync(path.join(base, 'app.js'), 'utf8'), { document, window: {}, FlagModes: modes, FlagCountries: countries, FlagGame: deterministicGame });
   return { elements, document };
@@ -344,4 +344,59 @@ test('mundo: botão revela todos os 195 países e limpa aviso de nome ambíguo',
   const status = el['round-status'].textContent;
   el['reveal-button'].events.click();
   assert.equal(el['round-status'].textContent, status);
+});
+
+
+test('controles: shuffle ordena os mesmos países e preserva acertos e revelações', () => {
+  const { elements: el } = appFixture();
+  const originalCards = [...el['flags-grid'].children];
+  const originalFlags = originalCards.map(card => card.querySelector('img').src).sort();
+  el['country-input'].value = countries[0].name; el['country-input'].events.input({});
+  const shuffle = el['shuffle-button'];
+  shuffle.events.click();
+  assert.equal(shuffle.attributes['aria-pressed'], 'false');
+  const orderedCountries = countries.slice(0, 5).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+  assert.deepEqual(el['flags-grid'].querySelectorAll('img').map(image => image.src), orderedCountries.map(country => country.flag));
+  assert.ok(el['flags-grid'].children.includes(originalCards[0]));
+  assert.ok(originalCards[0].matches('.correct'));
+  assert.equal(el['progress-gauge'].attributes['aria-valuenow'], '1');
+  el['reveal-button'].events.click();
+  const summary = el['round-status'].textContent;
+  shuffle.events.click();
+  assert.equal(shuffle.attributes['aria-pressed'], 'true');
+  assert.equal(el['flags-grid'].querySelectorAll('.revealed').length, 4);
+  assert.equal(el['flags-grid'].querySelectorAll('.correct').length, 1);
+  assert.equal(el['country-input'].disabled, true);
+  assert.equal(el['round-status'].textContent, summary);
+  assert.deepEqual(el['flags-grid'].querySelectorAll('img').map(image => image.src).sort(), originalFlags);
+});
+
+test('reiniciar limpa a rodada atual e mantém países e preferência de shuffle', () => {
+  const { elements: el } = appFixture();
+  el['shuffle-button'].events.click();
+  const flags = el['flags-grid'].querySelectorAll('img').map(image => image.src);
+  el['country-input'].value = countries[0].name; el['country-input'].events.input({});
+  el['country-input'].value = 'rascunho';
+  el['restart-round'].events.click();
+  assert.equal(el['country-input'].value, '');
+  assert.equal(el['country-input'].disabled, false);
+  assert.equal(el['progress-gauge'].attributes['aria-valuenow'], '0');
+  assert.equal(el['flags-grid'].querySelectorAll('.correct').length, 0);
+  assert.deepEqual(el['flags-grid'].querySelectorAll('img').map(image => image.src), flags);
+  el['reveal-button'].events.click();
+  el['restart-round'].events.click();
+  assert.equal(el['reveal-button'].disabled, false);
+  assert.equal(el['new-round'].hidden, true);
+  assert.equal(el['round-status'].textContent, '');
+  assert.equal(el['flags-grid'].querySelectorAll('.revealed').length, 0);
+  assert.deepEqual(el['flags-grid'].querySelectorAll('img').map(image => image.src), flags);
+  el['game-modes'].children[7].events.click();
+  const alphabetic = [...countries].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+  assert.deepEqual(el['flags-grid'].querySelectorAll('img').map(image => image.src), alphabetic.map(country => country.flag));
+  el['restart-round'].events.click();
+  assert.equal(el['flags-grid'].children.length, 195);
+  assert.deepEqual(el['flags-grid'].querySelectorAll('img').map(image => image.src), alphabetic.map(country => country.flag));
+  const html = fs.readFileSync(path.join(base, 'index.html'), 'utf8');
+  assert.doesNotMatch(html, /id="shortcut-hint"/);
+  assert.match(html, /id="restart-round"[^>]*>Reiniciar/);
 });

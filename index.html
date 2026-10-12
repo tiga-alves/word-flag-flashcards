@@ -41,10 +41,14 @@
             <div class="flags-grid" id="flags-grid"></div>
             <div class="typing-area">
               <label class="sr-only" for="country-input">Digite o nome de qualquer país das bandeiras</label>
-              <input id="country-input" class="country-input" type="text" placeholder="digite um país…" spellcheck="false" autocomplete="off" autocapitalize="none" aria-describedby="typing-hint shortcut-hint">
+              <input id="country-input" class="country-input" type="text" placeholder="digite um país…" spellcheck="false" autocomplete="off" autocapitalize="none" aria-describedby="typing-hint">
               <p id="typing-hint" class="sr-only">Digite qualquer um dos países · Backspace para corrigir</p>
             </div>
-            <p id="shortcut-hint" class="shortcut-hint"><button id="reveal-button" type="button" class="reveal-button" aria-keyshortcuts="1" aria-label="Revelar todas as respostas pendentes, atalho 1"><kbd>1</kbd> Revelar todas</button> mostra os nomes completos de todas as bandeiras pendentes. Respostas reveladas ficam separadas dos acertos.</p>
+            <div class="game-controls">
+              <button id="reveal-button" type="button" class="reveal-button" aria-keyshortcuts="1" aria-label="Revelar todas as respostas pendentes, atalho 1"><kbd>1</kbd> Revelar todas</button>
+              <button id="shuffle-button" type="button" class="reveal-button" aria-pressed="true">Shuffle: ligado</button>
+              <button id="restart-round" type="button" class="reveal-button">Reiniciar</button>
+            </div>
             <p id="answer-hint" class="answer-hint" hidden>Enter para confirmar este país, ou continue digitando um nome maior.</p>
             <div class="round-bottom">
               <div id="round-status" class="round-status" role="status" aria-live="polite" aria-atomic="true"></div>
